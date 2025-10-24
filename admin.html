@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .school-info h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .school-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .school-code {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #0066cc;
+        }
+
+        .school-code strong {
+            color: #0066cc;
+        }
+
+        .school-code-value {
+            font-family: monospace;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #0066cc;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+
+        .copy-btn {
+            padding: 8px 15px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #0052cc;
+            transform: translateY(-1px);
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-icon {
+            font-size: 2em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .login-form {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            
+            .admin-actions {
+                justify-content: center;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Formulaire de connexion (affiché si non connecté) -->
+        <div id="loginSection" class="login-form">
+            <h2 style="text-align: center; color: #667eea; margin-bottom: 30px;">🔐 Administration SpeakFree</h2>
+            
+            <div id="errorMessage" class="error-message"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn" style="width: 100%;">Se connecter</button>
+            </form>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="/" style="color: #667eea; text-decoration: none;">← Retour à l'accueil</a>
+            </div>
+        </div>
+
+        <!-- Interface d'administration (affiché si connecté) -->
+        <div id="adminSection" style="display: none;">
+            <div class="header">
+                <div class="school-info">
+                    <h1>🏫 Administration SpeakFree</h1>
+                    <h3 id="schoolName">Chargement...</h3>
+                    <div id="schoolCode" class="school-code" style="display: none;">
+                        <strong>🏫 Code de votre école :</strong>
+                        <span class="school-code-value" id="schoolCodeValue"></span>
+                        <button class="copy-btn" onclick="copySchoolCode()">📋 Copier</button>
+                        <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                            Communiquez ce code à vos élèves, professeurs et parents pour faciliter leurs signalements.
+                        </div>
+                    </div>
+                    <p id="schoolDetails">Informations de l'école</p>
+                </div>
+                
+                <div class="admin-actions">
+                    <a href="/admin/users" class="btn btn-info">👥 Gérer les utilisateurs</a>
+                    <button class="btn btn-danger" onclick="logout()">🚪 Déconnexion</button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Statistiques générales -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">📊 Statistiques générales</span>
+                        <span class="card-icon">📈</span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalReports">0</div>
+                            <div class="stat-label">Total signalements</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="newReports">0</div>
+                            <div class="stat-label">Nouveaux</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="inProgressReports">0</div>
+                            <div class="stat-label">En traitement</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="resolvedReports">0</div>
+                            <div class="stat-label">Résolus</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" onclick="viewAllReports()" style="width: 100%;">
+                        📋 Voir tous les signalements
+                    </button>
+                </div>
+
+                <!-- Utilisateurs -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">👥 Utilisateurs</span>
+                        <span class="card-icon">👤</span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalUsers">0</div>
+                            <div class="stat-label">Total utilisateurs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="activeUsers">0</div>
+                            <div class="stat-label">Actifs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="newUsersMonth">0</div>
+                            <div class="stat-label">Nouveaux ce mois</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="usersWithReports">0</div>
+                            <div class="stat-label">Avec signalements</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-info" onclick="window.location.href='/admin/users'" style="width: 100%;">
+                        👥 Gérer les utilisateurs
+                    </button>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <span class="card-title">⚡ Actions rapides</span>
+                        <span class="card-icon">🚀</span>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <button class="action-btn" onclick="viewAllReports()">
+                            📢 Voir tous les signalements
+                        </button>
+                        <button class="action-btn" onclick="viewPendingReports()">
+                            🆕 Signalements en attente
+                        </button>
+                        <button class="action-btn" onclick="window.location.href='/admin-discussions'">
+                            💬 Gérer les discussions
+                        </button>
+                        <button class="action-btn" onclick="window.location.href='/admin-ai-conversations'">
+                            🤖 Conversations avec Haniel
+                        </button>
+                        <button class="action-btn" onclick="viewSchoolStats()">
+                            📊 Statistiques détaillées
+                        </button>
+                        <button class="action-btn" onclick="generateInviteLink()">
+                            📤 Générer lien d'invitation
+                        </button>
+                        <button class="btn" onclick="showIdentityRevealPanel()" style="background: #dc3545;">
+                            🔍 Révéler identité (cas graves)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour révélation d'identité -->
+    <div id="identityRevealModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h2 style="color: #dc3545; margin: 0;">🔍 Révélation d'Identité - Cas Graves</h2>
+                <button onclick="closeIdentityModal()" style="background: none; border: none; font-size: 1.5em; cursor: pointer;">✕</button>
+            </div>
+
+            <div style="background: #f8d7da; padding: 20px; border-radius: 10px; border-left: 4px solid #dc3545; margin-bottom: 30px;">
+                <h3 style="color: #721c24; margin-bottom: 15px;">⚠️ ATTENTION - Procédure Exceptionnelle</h3>
+                <p style="color: #721c24; margin-bottom: 10px;">
+                    Cette fonctionnalité ne doit être utilisée que dans des cas <strong>extrêmement graves</strong> :
+                </p>
+                <ul style="color: #721c24; padding-left: 20px;">
+                    <li>Accusations de crimes graves</li>
+                    <li>Menaces de sécurité imminentes</li>
+                    <li>Tentatives de déstabilisation de l'établissement</li>
+                    <li>Situations nécessitant une intervention judiciaire</li>
+                </ul>
+                <p style="color: #721c24; margin-top: 15px; font-weight: bold;">
+                    L'utilisation abusive de cette fonction est passible de sanctions.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="reportCodeReveal">Code du signalement concerné</label>
+                <input type="text" id="reportCodeReveal" placeholder="Ex: SF-1729123456-ABC12" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 10px;">
+            </div>
+
+            <div class="form-group">
+                <label for="revealJustification">Justification détaillée (obligatoire)</label>
+                <textarea id="revealJustification" rows="5" placeholder="Expliquez en détail pourquoi cette révélation d'identité est nécessaire..." style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 10px;" required></textarea>
+                <small style="color: #666;">Cette justification sera enregistrée et pourra être auditée.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="adminPassword">Confirmez votre mot de passe administrateur</label>
+                <input type="password" id="adminPasswordReveal" placeholder="Votre mot de passe" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 10px;" required>
+            </div>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                <p style="color: #856404; margin: 0;">
+                    <strong>📋 Procédure :</strong> Cette demande sera enregistrée avec horodatage, votre identité et la justification. 
+                    En cas de signalement légitime, les informations de contact du signaleur vous seront communiquées.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
+                <button onclick="closeIdentityModal()" style="padding: 12px 25px; background: #6c757d; color: white; border: none; border-radius: 25px; cursor: pointer;">
+                    Annuler
+                </button>
+                <button onclick="requestIdentityReveal()" style="padding: 12px 25px; background: #dc3545; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: 600;">
+                    🔍 Demander la révélation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAdmin = null;
+
+        // Vérifier l'authentification au chargement
+        async function checkAuthentication() {
+            const token = localStorage.getItem('adminToken');
+            
+            if (!token) {
+                showLoginForm();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentAdmin = result.admin;
+                    showAdminDashboard();
+                    loadDashboardData();
+                } else {
+                    localStorage.removeItem('adminToken');
+                    showLoginForm();
+                }
+            } catch (error) {
+                console.error('Erreur lors de la vérification:', error);
+                localStorage.removeItem('adminToken');
+                showLoginForm();
+            }
+        }
+
+        // Afficher le formulaire de connexion
+        function showLoginForm() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('adminSection').style.display = 'none';
+        }
+
+        // Afficher le tableau de bord admin
+        function showAdminDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminSection').style.display = 'block';
+        }
+
+        // Gérer la connexion
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            errorMessage.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Connexion...';
+
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('adminToken', result.token);
+                    currentAdmin = result.admin;
+                    showAdminDashboard();
+                    loadDashboardData();
+                } else {
+                    errorMessage.textContent = result.message || 'Erreur de connexion';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erreur lors de la connexion:', error);
+                errorMessage.textContent = 'Erreur de connexion au serveur';
+                errorMessage.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Se connecter';
+            }
+        });
+
+        // Charger les données du tableau de bord
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('adminToken');
+                
+                // Charger les informations de l'école
+                const schoolResponse = await fetch(`/api/schools/${currentAdmin.schoolId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (schoolResponse.ok) {
+                    const schoolResult = await schoolResponse.json();
+                    if (schoolResult.success) {
+                        const school = schoolResult.school;
+                        document.getElementById('schoolName').textContent = school.name;
+                        
+                        if (school.school_code) {
+                            document.getElementById('schoolCode').style.display = 'block';
+                            document.getElementById('schoolCodeValue').textContent = school.school_code;
+                        }
+                        
+                        let details = [];
+                        if (school.city) details.push(school.city);
+                        if (school.region) details.push(school.region);
+                        if (school.school_type) details.push(getSchoolTypeLabel(school.school_type));
+                        
+                        document.getElementById('schoolDetails').textContent = details.join(' • ');
+                    }
+                }
+
+                // Charger les statistiques des signalements
+                const reportsResponse = await fetch('/api/admin/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (reportsResponse.ok) {
+                    const reportsResult = await reportsResponse.json();
+                    if (reportsResult.success) {
+                        const stats = reportsResult.stats;
+                        document.getElementById('totalReports').textContent = stats.total || 0;
+                        document.getElementById('newReports').textContent = stats.new_reports || 0;
+                        document.getElementById('inProgressReports').textContent = stats.in_progress || 0;
+                        document.getElementById('resolvedReports').textContent = stats.resolved || 0;
+                        
+                        console.log('✅ Statistiques chargées:', stats);
+                    }
+                } else {
+                    console.error('❌ Erreur chargement stats:', await reportsResponse.text());
+                }
+
+                // Charger les statistiques des utilisateurs
+                const usersResponse = await fetch('/api/admin/school-users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (usersResponse.ok) {
+                    const usersResult = await usersResponse.json();
+                    if (usersResult.success) {
+                        const users = usersResult.users;
+                        const total = users.length;
+                        const active = users.filter(u => u.is_active).length;
+                        const thisMonth = users.filter(u => {
+                            const created = new Date(u.created_at);
+                            const now = new Date();
+                            return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+                        }).length;
+                        const withReports = users.filter(u => (u.report_count || 0) > 0).length;
+
+                        document.getElementById('totalUsers').textContent = total;
+                        document.getElementById('activeUsers').textContent = active;
+                        document.getElementById('newUsersMonth').textContent = thisMonth;
+                        document.getElementById('usersWithReports').textContent = withReports;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error);
+            }
+        }
+
+        // Copier le code d'école
+        function copySchoolCode() {
+            const schoolCode = document.getElementById('schoolCodeValue').textContent;
+            navigator.clipboard.writeText(schoolCode).then(() => {
+                alert('✅ Code d\'école copié dans le presse-papier !');
+            }).catch(() => {
+                alert('Code d\'école : ' + schoolCode);
+            });
+        }
+
+        // Obtenir le libellé du type d'école
+        function getSchoolTypeLabel(type) {
+            const labels = {
+                'public': 'Public',
+                'prive': 'Privé',
+                'confessionnel': 'Confessionnel',
+                'international': 'International'
+            };
+            return labels[type] || type;
+        }
+
+        // Actions du tableau de bord
+        function viewAllReports() {
+            // Rediriger vers la page de gestion des signalements
+            window.location.href = '/admin-reports';
+        }
+
+        function viewPendingReports() {
+            // Rediriger vers la page de gestion avec filtre nouveaux
+            window.location.href = '/admin-reports?status=new';
+        }
+
+        function generateInviteLink() {
+            if (currentAdmin && currentAdmin.schoolId) {
+                const baseUrl = window.location.origin;
+                const schoolCode = document.getElementById('schoolCodeValue')?.textContent;
+                const inviteMessage = `🎓 Rejoins notre école sur SpeakFree !
+                
+📱 Pour signaler de manière anonyme :
+${baseUrl}/report
+Code école : ${schoolCode}
+
+🔐 Pour devenir administrateur :
+${baseUrl}/register-admin`;
+                
+                navigator.clipboard.writeText(inviteMessage).then(() => {
+                    alert('✅ Message d\'invitation copié dans le presse-papier !\n\nPartage-le avec ta communauté scolaire.');
+                }).catch(() => {
+                    alert(inviteMessage);
+                });
+            }
+        }
+
+        function viewSchoolStats() {
+            // Afficher les stats actuelles
+            const totalReports = document.getElementById('totalReports').textContent;
+            const newReports = document.getElementById('newReports').textContent;
+            const inProgress = document.getElementById('inProgressReports').textContent;
+            const resolved = document.getElementById('resolvedReports').textContent;
+            
+            alert(`📊 Statistiques de votre école :
+            
+📢 Total des signalements : ${totalReports}
+🆕 Nouveaux : ${newReports}
+⏳ En cours : ${inProgress}
+✅ Résolus : ${resolved}
+
+Pour plus de détails, consultez la page de gestion des signalements.`);
+        }
+
+        function exportData() {
+            alert('📥 Export des données\n\nCette fonctionnalité sera disponible prochainement.\n\nVous pourrez exporter :\n- Les statistiques\n- La liste des signalements\n- Les rapports détaillés');
+        }
+
+        // Fonctions pour la révélation d'identité
+        function showIdentityRevealPanel() {
+            document.getElementById('identityRevealModal').style.display = 'flex';
+        }
+
+        function closeIdentityModal() {
+            document.getElementById('identityRevealModal').style.display = 'none';
+            // Réinitialiser les champs
+            document.getElementById('reportCodeReveal').value = '';
+            document.getElementById('revealJustification').value = '';
+            document.getElementById('adminPasswordReveal').value = '';
+        }
+
+        async function requestIdentityReveal() {
+            const reportCode = document.getElementById('reportCodeReveal').value.trim();
+            const justification = document.getElementById('revealJustification').value.trim();
+            const adminPassword = document.getElementById('adminPasswordReveal').value;
+
+            // Validations
+            if (!reportCode) {
+                alert('❌ Veuillez saisir le code du signalement');
+                return;
+            }
+
+            if (!justification || justification.length < 50) {
+                alert('❌ La justification doit contenir au moins 50 caractères');
+                return;
+            }
+
+            if (!adminPassword) {
+                alert('❌ Veuillez confirmer votre mot de passe administrateur');
+                return;
+            }
+
+            // Confirmation finale
+            const confirmMessage = `⚠️ CONFIRMATION REQUISE ⚠️
+
+Vous êtes sur le point de demander la révélation d'identité pour le signalement : ${reportCode}
+
+Cette action est IRRÉVERSIBLE et sera ENREGISTRÉE dans les logs d'audit.
+
+Justification : ${justification.substring(0, 100)}${justification.length > 100 ? '...' : ''}
+
+Êtes-vous absolument certain que cette demande est justifiée et conforme à la législation en vigueur ?`;
+
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('adminToken');
+                const response = await fetch('/api/admin/reveal-identity', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        reportCode: reportCode,
+                        justification: justification,
+                        adminPassword: adminPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ Demande de révélation enregistrée avec succès !
+
+ID de la demande : ${result.requestId}
+Statut : ${result.status}
+
+${result.revealedInfo ? 
+`🔍 INFORMATIONS RÉVÉLÉES :
+Nom : ${result.revealedInfo.fullName || 'Non disponible'}
+Email : ${result.revealedInfo.email || 'Non disponible'}
+Téléphone : ${result.revealedInfo.phone || 'Non disponible'}
+Type : ${result.revealedInfo.userType || 'Non disponible'}
+
+⚠️ Ces informations sont confidentielles et ne doivent être utilisées qu'aux fins légitimes déclarées.` : 
+'La demande a été enregistrée et sera traitée selon les procédures en vigueur.'}`);
+                    
+                    closeIdentityModal();
+                } else {
+                    alert(`❌ Erreur : ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Erreur lors de la demande de révélation:', error);
+                alert('❌ Erreur de connexion au serveur');
+            }
+        }
+
+        // Déconnexion
+        function logout() {
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                localStorage.removeItem('adminToken');
+                showLoginForm();
+                currentAdmin = null;
+            }
+        }
+
+        // Initialisation
+        checkAuthentication();
+    </script>
+</body>
+</html>
