@@ -1,29 +1,33 @@
-# Configuration Netlify
-# Cette plateforme n'est PAS compatible avec Node.js/Express
-# À utiliser uniquement pour le frontend statique ou les fonctions serverless
-
-# ⚠️ ATTENTION: SpeakFree est une application Node.js/Express
-# Elle NE peut PAS être déployée sur Netlify
-# Utilisez Render.com ou Railway.app à la place
+# Configuration Netlify pour SpeakFree Frontend
+# ATTENTION: Cette config est pour le frontend statique uniquement
+# Le backend Node.js/Express doit être déployé sur Render.com ou Railway.app
 
 [build]
-# Netlify ne peut pas construire une app Express
-# Cette section est documentaire uniquement
-command = "npm install"
+base = "."
 publish = "public"
+command = "npm install"
 
-# Redirection des requêtes API vers le backend (si déployé ailleurs)
+# Redirections API vers le backend Render
 [[redirects]]
 from = "/api/*"
 to = "https://speakfree-api.onrender.com/api/:splat"
 status = 200
 force = true
 
+# SPA - rediriger vers index.html
 [[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
 
 # Headers de sécurité
+[[headers]]
+for = "/*"
+[headers.values]
+  X-Frame-Options = "SAMEORIGIN"
+  X-Content-Type-Options = "nosniff"
+  X-XSS-Protection = "1; mode=block"
+  Referrer-Policy = "strict-origin-when-cross-origin"
+
 [build.environment]
 NODE_VERSION = "22.21.0"
