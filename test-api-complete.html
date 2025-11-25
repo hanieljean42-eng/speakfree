@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test API Complet - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        .test-section {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .test-section h2 {
+            color: #64B5F6;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 8px;
+        }
+
+        .test-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .test-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .test-button.danger {
+            background: #f44336;
+        }
+
+        .test-button.danger:hover {
+            background: #da190b;
+        }
+
+        .output {
+            background: #1a1a1a;
+            border-left: 3px solid #4CAF50;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .output.error {
+            border-left-color: #f44336;
+            color: #ff6b6b;
+        }
+
+        .output.success {
+            border-left-color: #4CAF50;
+            color: #81c784;
+        }
+
+        .output.info {
+            border-left-color: #64B5F6;
+            color: #64B5F6;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .status-indicator.ok {
+            background: #4CAF50;
+        }
+
+        .status-indicator.error {
+            background: #f44336;
+        }
+
+        .status-indicator.pending {
+            background: #FFC107;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        input, textarea {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 8px;
+            border-radius: 4px;
+            margin-right: 10px;
+            width: 200px;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #64B5F6;
+            box-shadow: 0 0 5px #64B5F6;
+        }
+
+        .summary {
+            background: #1a472a;
+            border: 1px solid #4CAF50;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .summary h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .test-count {
+            font-size: 1.2em;
+            color: #81c784;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 TEST API COMPLET - SPEAKFREE</h1>
+
+        <div class="summary">
+            <h2>📊 Résumé des Tests</h2>
+            <p><span class="status-indicator ok"></span> <span class="test-count">Tests: <span id="testCount">0</span> | Succès: <span id="successCount">0</span> | Erreurs: <span id="errorCount">0</span></span></p>
+        </div>
+
+        <!-- Test 1: Vérification du Serveur -->
+        <div class="test-section">
+            <h2>1️⃣ Santé du Serveur</h2>
+            <button class="test-button" onclick="testServerHealth()">Vérifier l'état</button>
+            <div id="output-health" class="output"></div>
+        </div>
+
+        <!-- Test 2: Création Session IA -->
+        <div class="test-section">
+            <h2>2️⃣ Chat IA - Création Session</h2>
+            <button class="test-button" onclick="testCreateSession()">Créer session</button>
+            <div id="output-session" class="output"></div>
+        </div>
+
+        <!-- Test 3: Message IA -->
+        <div class="test-section">
+            <h2>3️⃣ Chat IA - Envoyer Message</h2>
+            <div class="grid">
+                <input type="text" id="sessionCode" placeholder="Code session" value="">
+                <input type="text" id="aiMessage" placeholder="Message" value="Je veux signaler du harcèlement">
+                <button class="test-button" onclick="testSendMessage()">Envoyer</button>
+            </div>
+            <div id="output-message" class="output"></div>
+        </div>
+
+        <!-- Test 4: Stats Globales -->
+        <div class="test-section">
+            <h2>4️⃣ Statistiques Globales</h2>
+            <button class="test-button" onclick="testGlobalStats()">Charger stats</button>
+            <div id="output-stats" class="output"></div>
+        </div>
+
+        <!-- Test 5: Stats Super Admin -->
+        <div class="test-section">
+            <h2>5️⃣ Stats Super Admin</h2>
+            <button class="test-button" onclick="testSuperAdminStats()">Charger stats</button>
+            <div id="output-admin-stats" class="output"></div>
+        </div>
+
+        <!-- Test 6: Écoles Actives -->
+        <div class="test-section">
+            <h2>6️⃣ Écoles Actives</h2>
+            <button class="test-button" onclick="testActiveSchools()">Lister</button>
+            <div id="output-active-schools" class="output"></div>
+        </div>
+
+        <!-- Test 7: Écoles en Attente -->
+        <div class="test-section">
+            <h2>7️⃣ Écoles en Attente</h2>
+            <button class="test-button" onclick="testPendingSchools()">Lister</button>
+            <div id="output-pending-schools" class="output"></div>
+        </div>
+
+        <!-- Test 8: Création Signalement -->
+        <div class="test-section">
+            <h2>8️⃣ Créer Signalement</h2>
+            <div class="grid">
+                <input type="text" id="schoolCode" placeholder="Code école" value="ECOLE-TEST">
+                <input type="text" id="incidentType" placeholder="Type" value="harcelement">
+                <textarea id="description" placeholder="Description" style="width: 400px; height: 60px;">Ceci est un test de signalement</textarea>
+                <input type="date" id="incidentDate" placeholder="Date">
+                <button class="test-button" onclick="testCreateReport()">Créer</button>
+            </div>
+            <div id="output-report" class="output"></div>
+        </div>
+
+        <!-- Test 9: Inscription École -->
+        <div class="test-section">
+            <h2>9️⃣ Inscrire École</h2>
+            <div class="grid">
+                <input type="text" id="schoolName" placeholder="Nom" value="École Test">
+                <input type="text" id="email" placeholder="Email" value="test@ecole.test">
+                <input type="text" id="phone" placeholder="Téléphone" value="+225 0123456789">
+                <button class="test-button" onclick="testRegisterSchool()">Inscrire</button>
+            </div>
+            <div id="output-school" class="output"></div>
+        </div>
+
+        <!-- Test 10: Réinitialisation -->
+        <div class="test-section">
+            <h2>🔄 Utilitaires</h2>
+            <button class="test-button" onclick="clearAllOutputs()">Effacer tout</button>
+            <button class="test-button danger" onclick="runAllTests()">Exécuter tous les tests</button>
+            <div id="output-utils" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        let stats = {
+            tests: 0,
+            success: 0,
+            errors: 0
+        };
+
+        function updateStats() {
+            document.getElementById('testCount').textContent = stats.tests;
+            document.getElementById('successCount').textContent = stats.success;
+            document.getElementById('errorCount').textContent = stats.errors;
+        }
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            
+            element.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            element.className = `output ${type}`;
+            element.scrollTop = element.scrollHeight;
+            
+            stats.tests++;
+            if (type === 'success') stats.success++;
+            if (type === 'error') stats.errors++;
+            updateStats();
+        }
+
+        async function testServerHealth() {
+            try {
+                const response = await fetch('/');
+                log('output-health', `État: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+            } catch (err) {
+                log('output-health', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testCreateSession() {
+            try {
+                const response = await fetch('/api/ai-chat/create-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ schoolCode: null })
+                });
+                const data = await response.json();
+                document.getElementById('sessionCode').value = data.sessionCode;
+                log('output-session', `Session créée: ${data.sessionCode}`, 'success');
+            } catch (err) {
+                log('output-session', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testSendMessage() {
+            const sessionCode = document.getElementById('sessionCode').value;
+            const message = document.getElementById('aiMessage').value;
+            
+            if (!sessionCode || !message) {
+                log('output-message', 'Code session ou message manquant', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/ai-chat/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionCode, message })
+                });
+                const data = await response.json();
+                log('output-message', `Réponse: ${data.message}`, 'success');
+            } catch (err) {
+                log('output-message', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testGlobalStats() {
+            try {
+                const response = await fetch('/api/schools/stats/global');
+                const data = await response.json();
+                log('output-stats', `Écoles: ${data.schools} | Signalements: ${data.reports} | Admins: ${data.admins}`, 'success');
+            } catch (err) {
+                log('output-stats', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testSuperAdminStats() {
+            try {
+                const response = await fetch('/api/super-admin/stats');
+                const data = await response.json();
+                log('output-admin-stats', JSON.stringify(data, null, 2), 'success');
+            } catch (err) {
+                log('output-admin-stats', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testActiveSchools() {
+            try {
+                const response = await fetch('/api/super-admin/schools/active');
+                const data = await response.json();
+                log('output-active-schools', `Écoles actives: ${data.schools ? data.schools.length : 0}`, 'success');
+            } catch (err) {
+                log('output-active-schools', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testPendingSchools() {
+            try {
+                const response = await fetch('/api/super-admin/schools/pending');
+                const data = await response.json();
+                log('output-pending-schools', `Écoles en attente: ${data.schools ? data.schools.length : 0}`, 'success');
+            } catch (err) {
+                log('output-pending-schools', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testCreateReport() {
+            const schoolCode = document.getElementById('schoolCode').value;
+            if (!schoolCode) {
+                log('output-report', 'Code école manquant', 'error');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('schoolCode', schoolCode);
+                formData.append('incidentType', document.getElementById('incidentType').value);
+                formData.append('description', document.getElementById('description').value);
+                formData.append('incidentDate', document.getElementById('incidentDate').value);
+                formData.append('location', 'Test location');
+                
+                const response = await fetch('/api/reports/create', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    log('output-report', `Erreur: ${data.error}`, 'error');
+                } else {
+                    log('output-report', `Signalement créé: ${data.trackingCode}`, 'success');
+                }
+            } catch (err) {
+                log('output-report', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        async function testRegisterSchool() {
+            try {
+                const response = await fetch('/api/schools/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        schoolName: document.getElementById('schoolName').value,
+                        schoolType: 'college',
+                        city: 'Test',
+                        district: 'Test',
+                        address: 'Test',
+                        email: document.getElementById('email').value,
+                        phone: document.getElementById('phone').value,
+                        firstName: 'Test',
+                        lastName: 'User',
+                        position: 'Principal'
+                    })
+                });
+                const data = await response.json();
+                
+                if (data.error) {
+                    log('output-school', `Erreur: ${data.error}`, 'error');
+                } else {
+                    log('output-school', `École créée: ${data.schoolCode}`, 'success');
+                }
+            } catch (err) {
+                log('output-school', `Erreur: ${err.message}`, 'error');
+            }
+        }
+
+        function clearAllOutputs() {
+            document.querySelectorAll('.output').forEach(el => el.textContent = '');
+            stats = { tests: 0, success: 0, errors: 0 };
+            updateStats();
+            log('output-utils', 'Tous les outputs effacés', 'success');
+        }
+
+        async function runAllTests() {
+            log('output-utils', 'Lancement de tous les tests...', 'info');
+            
+            await testServerHealth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testCreateSession();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const sessionCode = document.getElementById('sessionCode').value;
+            if (sessionCode) {
+                document.getElementById('aiMessage').value = 'Bonjour, je dois signaler du harcèlement';
+                await testSendMessage();
+            }
+            
+            await testGlobalStats();
+            await testSuperAdminStats();
+            await testActiveSchools();
+            await testPendingSchools();
+            
+            log('output-utils', 'Tests terminés!', 'success');
+        }
+
+        // Initialiser la date d'aujourd'hui
+        document.getElementById('incidentDate').valueAsDate = new Date();
+    </script>
+</body>
+</html>

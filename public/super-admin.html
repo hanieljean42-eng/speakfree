@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚙️ Super Admin - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-box h1 {
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #e74c3c;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .header {
+            background: rgba(255,255,255,0.15);
+            padding: 25px 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+        }
+
+        .logout-btn {
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            color: #333;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .stat-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .stat-card .label {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .schools-container {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .section-header h2 {
+            font-size: 1.8em;
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .school-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .school-card.pending {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        .school-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .school-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .school-code {
+            color: #666;
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+
+        .school-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .school-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-pending {
+            background: #ffc107;
+            color: #856404;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-sm:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .school-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Écran de connexion -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>⚙️ Super Admin</h1>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Zone Restreinte</strong><br>
+                Accès réservé au super administrateur
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Code d'Accès Super Admin</label>
+                    <input type="password" class="form-control" id="adminCode" required placeholder="Enter le code...">
+                </div>
+
+                <button type="submit" class="btn">
+                    🔓 Accéder
+                </button>
+            </form>
+
+            <p style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9em;">
+                <a href="/" style="color: #e74c3c;">← Retour à l'accueil</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard Super Admin -->
+    <div class="dashboard" id="dashboard">
+        <div class="container">
+            <div class="header">
+                <div>
+                    <h1>⚙️ Super Admin Panel</h1>
+                    <p style="opacity: 0.9;">Gestion globale de la plateforme SpeakFree</p>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    🚪 Déconnexion
+                </button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon">🏫</div>
+                    <div class="number" id="activeSchools">0</div>
+                    <div class="label">Écoles Actives</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="icon">⏳</div>
+                    <div class="number" id="pendingSchools">0</div>
+                    <div class="label">En Attente</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="icon">📢</div>
+                    <div class="number" id="totalReports">0</div>
+                    <div class="label">Signalements Total</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="icon">👥</div>
+                    <div class="number" id="totalAdmins">0</div>
+                    <div class="label">Administrateurs</div>
+                </div>
+            </div>
+
+            <div class="schools-container">
+                <div class="section-header">
+                    <h2>🏫 Gestion des Écoles</h2>
+                    <div class="tabs">
+                        <button class="tab active" onclick="showTab('pending')">
+                            ⏳ En Attente
+                        </button>
+                        <button class="tab" onclick="showTab('active')">
+                            ✅ Actives 
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab: En Attente -->
+                <div class="tab-content active" id="pending">
+                    <!-- Les écoles seront chargées dynamiquement -->
+                </div>
+
+                <!-- Tab: Actives -->
+                <div class="tab-content" id="active">
+                    <!-- Les écoles seront chargées dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPER_ADMIN_CODE = '200700';
+
+        // Charger les statistiques
+        function loadStatistics() {
+            fetch('/api/super-admin/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('activeSchools').textContent = data.activeSchools || 0;
+                    document.getElementById('pendingSchools').textContent = data.pendingSchools || 0;
+                    document.getElementById('totalReports').textContent = data.totalReports || 0;
+                    document.getElementById('totalAdmins').textContent = data.totalAdmins || 0;
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des stats:', error);
+                    // Garder les valeurs par défaut (0)
+                });
+        }
+
+        // Charger les écoles en attente
+        function loadPendingSchools() {
+            fetch('/api/super-admin/schools/pending')
+                .then(response => response.json())
+                .then(data => {
+                    const pendingContainer = document.getElementById('pending');
+                    
+                    if (!data.schools || data.schools.length === 0) {
+                        pendingContainer.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">⏳</div>
+                                <h3>Aucune demande en attente</h3>
+                                <p>Les écoles qui demandent l'accès à SpeakFree apparaîtront ici.</p>
+                            </div>
+                        `;
+                    } else {
+                        let html = '';
+                        data.schools.forEach(school => {
+                            html += `
+                                <div class="school-card pending" data-school-id="${school.id}">
+                                    <div class="school-header">
+                                        <div>
+                                            <div class="school-name">🏫 ${school.name}</div>
+                                            <div class="school-code">Code: ${school.school_code}</div>
+                                        </div>
+                                        <span class="status-badge status-pending">⏳ En attente</span>
+                                    </div>
+
+                                    <div class="school-info">
+                                        <div class="info-item">
+                                            <span class="info-label">📍 Ville:</span>
+                                            <span class="info-value">${school.city || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">📧 Email:</span>
+                                            <span class="info-value">${school.email}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">📞 Téléphone:</span>
+                                            <span class="info-value">${school.phone}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">👤 Contact:</span>
+                                            <span class="info-value">${school.first_name} ${school.last_name}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="school-footer">
+                                        <div>
+                                            <strong>Type:</strong> ${school.type} | <strong>Élèves:</strong> ${school.student_count || 'N/A'}
+                                        </div>
+                                    </div>
+
+                                    <div class="school-footer">
+                                        <div></div>
+                                        <div class="action-btns">
+                                            <button class="btn-sm btn-approve" onclick="approveSchool(${school.id}, '${school.school_code.replace(/'/g, "\\'")}', '${school.phone.replace(/'/g, "\\'")}', '${school.first_name.replace(/'/g, "\\'")}')">
+                                                ✅ Approuver
+                                            </button>
+                                            <button class="btn-sm btn-reject" onclick="rejectSchool(${school.id}, '${school.school_code.replace(/'/g, "\\'")}')">
+                                                ❌ Rejeter
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        pendingContainer.innerHTML = html;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des écoles:', error);
+                });
+        }
+
+        // Charger les écoles actives
+        function loadActiveSchools() {
+            fetch('/api/super-admin/schools/active')
+                .then(response => response.json())
+                .then(data => {
+                    const activeContainer = document.getElementById('active');
+                    
+                    if (!data.schools || data.schools.length === 0) {
+                        activeContainer.innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">🏫</div>
+                                <h3>Aucune école active</h3>
+                                <p>Les écoles inscrites et validées apparaîtront ici avec leurs statistiques.</p>
+                            </div>
+                        `;
+                    } else {
+                        let html = '';
+                        data.schools.forEach(school => {
+                            html += `
+                                <div class="school-card">
+                                    <div class="school-header">
+                                        <div>
+                                            <div class="school-name">🏫 ${school.name}</div>
+                                            <div class="school-code">Code: ${school.school_code}</div>
+                                        </div>
+                                        <span class="status-badge status-active">✅ Active</span>
+                                    </div>
+
+                                    <div class="school-info">
+                                        <div class="info-item">
+                                            <span class="info-label">📍 Ville:</span>
+                                            <span class="info-value">${school.city || 'N/A'}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">📢 Signalements:</span>
+                                            <span class="info-value">${school.report_count || 0} au total</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">👥 Admins:</span>
+                                            <span class="info-value">${school.admin_count || 0} administrateur(s)</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">👤 Type:</span>
+                                            <span class="info-value">${school.type}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="school-footer">
+                                        <div>
+                                            <strong>Élèves:</strong> ${school.student_count || 'N/A'}
+                                        </div>
+                                        <div class="action-btns">
+                                            <button class="btn-sm btn-view" onclick="viewSchoolDetails(${school.id})">
+                                                👁️ Détails
+                                            </button>
+                                            <button class="btn-sm btn-delete" onclick="deleteSchool(${school.id})">
+                                                🗑️ Supprimer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        activeContainer.innerHTML = html;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des écoles actives:', error);
+                });
+        }
+
+        // Connexion
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const code = document.getElementById('adminCode').value;
+            
+            if (code === SUPER_ADMIN_CODE) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                
+                // Charger les données au login
+                loadStatistics();
+                loadPendingSchools();
+                loadActiveSchools();
+                
+                // Mettre à jour les statistiques toutes les 30 secondes
+                setInterval(loadStatistics, 30000);
+                
+                // Mettre à jour les écoles toutes les 60 secondes
+                setInterval(loadPendingSchools, 60000);
+                setInterval(loadActiveSchools, 60000);
+            } else {
+                alert('❌ Code incorrect !');
+                document.getElementById('adminCode').value = '';
+            }
+        });
+
+        function showTab(tabName) {
+            // Masquer tous les tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Désactiver tous les boutons
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Afficher le tab demandé
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function approveSchool(schoolId, schoolCode, phoneNumber, schoolName) {
+            const password = prompt('Générer le mot de passe (laisser vide pour générer automatiquement):', '');
+            
+            if (password === null) return; // Annulation
+            
+            fetch(`/api/super-admin/schools/${schoolId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: '200700',
+                    defaultPassword: password || undefined
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert('❌ Erreur: ' + data.error);
+                } else {
+                    const finalPassword = data.defaultPassword || password;
+                    
+                    // Nettoyer le numéro pour WhatsApp (enlever les espaces)
+                    const cleanPhone = phoneNumber.replace(/\s+/g, '');
+                    
+                    // Construire le message WhatsApp
+                    const whatsappMessage = `Bonjour ${schoolName},\n\n` +
+                        `✅ Votre demande d'inscription à SpeakFree a été approuvée !\n\n` +
+                        `📋 Vos informations de connexion:\n` +
+                        `🔐 Code École: ${data.schoolCode}\n` +
+                        `🔑 Mot de passe: ${finalPassword}\n\n` +
+                        `🌐 Accédez à la plateforme: http://localhost:3000/login\n\n` +
+                        `Bienvenue sur SpeakFree! 🎉`;
+                    
+                    // Lien WhatsApp (extraire les chiffres)
+                    const whatsappLink = `https://wa.me/${cleanPhone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
+                    
+                    alert(`✅ École approuvée!\n\nInformations de connexion:\n- Code: ${data.schoolCode}\n- Mot de passe: ${finalPassword}\n\nUn message WhatsApp va être envoyé.`);
+                    
+                    // Ouvrir WhatsApp
+                    window.open(whatsappLink, '_blank');
+                    
+                    // Recharger les écoles
+                    setTimeout(() => {
+                        loadPendingSchools();
+                        loadActiveSchools();
+                        loadStatistics();
+                    }, 500);
+                }
+            })
+            .catch(err => {
+                console.error('Erreur:', err);
+                alert('❌ Erreur lors de l\'approbation');
+            });
+        }
+
+        function rejectSchool(schoolId, schoolCode) {
+            const reason = prompt('Raison du rejet:', '');
+            
+            if (reason === null) return; // Annulation
+            
+            fetch(`/api/super-admin/schools/${schoolId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: '200700',
+                    reason: reason || 'Non spécifiée'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert('❌ Erreur: ' + data.error);
+                } else {
+                    alert('❌ Demande rejetée.\n\nEcole: ' + data.schoolName + '\nEmail: ' + data.adminEmail);
+                    setTimeout(() => {
+                        loadPendingSchools();
+                        loadStatistics();
+                    }, 500);
+                }
+            })
+            .catch(err => {
+                console.error('Erreur:', err);
+                alert('❌ Erreur lors du rejet');
+            });
+        }
+
+        function viewSchool(schoolId) {
+            alert('Affichage des détails de l\'école ' + schoolId);
+        }
+
+        function viewSchoolDetails(schoolId) {
+            fetch(`/api/super-admin/schools/${schoolId}/details`)
+                .then(res => res.json())
+                .then(data => {
+                    alert(`📊 Détails de ${data.school.name}\n\n` +
+                        `📍 Ville: ${data.school.city}\n` +
+                        `👥 Administrateurs: ${data.admins.length}\n` +
+                        `📢 Signalements: ${data.recentReports.length} récents`);
+                })
+                .catch(err => console.error('Erreur:', err));
+        }
+
+        function deleteSchool(schoolId) {
+            if (confirm('⚠️ ATTENTION ! Supprimer cette école supprimera TOUS ses signalements et données. Continuer ?')) {
+                fetch(`/api/super-admin/schools/${schoolId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: '200700' })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('❌ Erreur: ' + data.error);
+                    } else {
+                        alert('🗑️ École supprimée.');
+                        loadActiveSchools();
+                        loadStatistics();
+                    }
+                })
+                .catch(err => console.error('Erreur:', err));
+            }
+        }
+
+        function logout() {
+            if (confirm('Se déconnecter du panel super admin ?')) {
+                document.getElementById('dashboard').classList.remove('active');
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('adminCode').value = '';
+            }
+        }
+    </script>
+</body>
+</html>

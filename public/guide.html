@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 Guide d'Utilisation - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .content-section {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            color: #333;
+        }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .guide-intro {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .guide-intro h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .guide-intro p {
+            opacity: 0.95;
+            font-size: 1.1em;
+        }
+
+        .steps {
+            margin: 30px 0;
+        }
+
+        .step {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .step:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-right: 15px;
+            margin-bottom: 15px;
+        }
+
+        .step h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .step p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .step ul {
+            margin: 15px 0 15px 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .step-image {
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            background: #e9ecef;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            margin: 15px 0;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .faq {
+            margin-top: 30px;
+        }
+
+        .faq-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .faq-item:hover {
+            background: #e9ecef;
+        }
+
+        .faq-question {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-answer {
+            color: #666;
+            margin-top: 15px;
+            line-height: 1.8;
+            display: none;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-toggle {
+            font-size: 1.5em;
+            transition: transform 0.3s;
+        }
+
+        .faq-item.active .faq-toggle {
+            transform: rotate(180deg);
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .quick-link {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .quick-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .quick-link .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .content-section {
+                padding: 25px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← Retour à l'accueil</a>
+
+        <header>
+            <h1>📖 Guide d'Utilisation</h1>
+            <p>Tout ce que tu dois savoir sur SpeakFree</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('student')">
+                👤 Pour les Élèves
+            </button>
+            <button class="tab" onclick="showTab('admin')">
+                👔 Pour les Admins
+            </button>
+            <button class="tab" onclick="showTab('faq')">
+                ❓ FAQ
+            </button>
+        </div>
+
+        <!-- Section Élèves -->
+        <div class="content-section active" id="student">
+            <div class="guide-intro">
+                <h2>👤 Guide pour les Élèves</h2>
+                <p>Apprends à utiliser SpeakFree pour signaler en toute sécurité</p>
+            </div>
+
+            <div class="alert alert-success">
+                <span style="font-size: 1.5em;">🔒</span>
+                <div>
+                    <strong>Rappel Important :</strong><br>
+                    Tous tes signalements sont 100% anonymes. L'école ne connaîtra JAMAIS ton identité.
+                </div>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h3>🤖 Choisis ta méthode de signalement</h3>
+                    <p>Tu as deux options :</p>
+                    <ul>
+                        <li><strong>Haniel (Recommandé) :</strong> Discute avec notre assistant IA qui va te guider pas à pas</li>
+                        <li><strong>Formulaire Manuel :</strong> Remplis directement le formulaire si tu préfères</li>
+                    </ul>
+                    <div class="alert alert-info">
+                        <span>💡</span>
+                        <div>Haniel est plus simple ! Il te pose les bonnes questions et t'aide à tout expliquer clairement.</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h3>📝 Décris la situation</h3>
+                    <p>Explique ce qui s'est passé avec le plus de détails possible :</p>
+                    <ul>
+                        <li>Quel type d'incident ? (harcèlement, violence, vol, etc.)</li>
+                        <li>Quand est-ce arrivé ? (date et heure)</li>
+                        <li>Où ça s'est passé ? (lieu dans l'école)</li>
+                        <li>Y avait-il des témoins ?</li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <span>⚠️</span>
+                        <div>Plus tu donnes de détails, mieux l'école pourra agir. Mais ne t'inquiète pas, ton anonymat est garanti !</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h3>📸 Ajoute des preuves (optionnel)</h3>
+                    <p>Si tu as des photos ou vidéos, tu peux les ajouter :</p>
+                    <ul>
+                        <li>Maximum 10 MB par fichier</li>
+                        <li>Formats acceptés : JPG, PNG, MP4, MOV</li>
+                        <li>Les métadonnées sont supprimées pour protéger ta vie privée</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <h3>🎫 Reçois tes codes</h3>
+                    <p>Après l'envoi, tu recevras deux codes importants :</p>
+                    <ul>
+                        <li><strong>Code de Suivi (RPT-XXX) :</strong> Pour vérifier l'état de ton signalement</li>
+                        <li><strong>Code d'Accès Discussion (DSC-XXX) :</strong> Pour discuter anonymement avec l'école</li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <span>💾</span>
+                        <div><strong>IMPORTANT :</strong> Note ces codes ! Tu en auras besoin pour suivre ton dossier.</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <h3>💬 Communique avec l'école</h3>
+                    <p>L'école peut te contacter via la discussion sécurisée :</p>
+                    <ul>
+                        <li>Utilise ton code d'accès discussion (DSC-XXX)</li>
+                        <li>Réponds aux questions de l'école</li>
+                        <li>Donne plus d'informations si nécessaire</li>
+                        <li>Reste toujours 100% anonyme</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="quick-links">
+                <a href="/chat-ia" class="quick-link">
+                    <div class="icon">🤖</div>
+                    <div>Parler avec Haniel</div>
+                </a>
+                <a href="/report" class="quick-link">
+                    <div class="icon">📝</div>
+                    <div>Formulaire Manuel</div>
+                </a>
+                <a href="/discussion" class="quick-link">
+                    <div class="icon">💬</div>
+                    <div>Ma Discussion</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section Admin -->
+        <div class="content-section" id="admin">
+            <div class="guide-intro">
+                <h2>👔 Guide pour les Administrateurs</h2>
+                <p>Gérez efficacement les signalements de votre établissement</p>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h3>🔑 Connexion à votre espace</h3>
+                    <p>Accédez au dashboard administrateur :</p>
+                    <ul>
+                        <li>Utilisez votre email professionnel ou code école</li>
+                        <li>Entrez votre mot de passe sécurisé</li>
+                        <li>Activez "Se souvenir de moi" pour un accès rapide</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h3>📊 Tableau de bord</h3>
+                    <p>Vue d'ensemble de votre établissement :</p>
+                    <ul>
+                        <li>Nombre total de signalements</li>
+                        <li>Signalements en attente de traitement</li>
+                        <li>Signalements en cours</li>
+                        <li>Signalements résolus</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h3>📢 Gestion des signalements</h3>
+                    <p>Traitez les signalements efficacement :</p>
+                    <ul>
+                        <li>Consultez tous les détails du signalement</li>
+                        <li>Visualisez les photos/vidéos jointes</li>
+                        <li>Changez le statut (En attente → En cours → Résolu)</li>
+                        <li>Ajoutez des notes internes pour votre équipe</li>
+                    </ul>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">4</span>
+                    <h3>💬 Communication avec les élèves</h3>
+                    <p>Dialoguez de manière anonyme :</p>
+                    <ul>
+                        <li>Accédez à la discussion depuis le signalement</li>
+                        <li>Posez des questions pour mieux comprendre</li>
+                        <li>Rassurez l'élève sur les actions prises</li>
+                        <li>Tenez-le informé de l'avancement</li>
+                    </ul>
+                    <div class="alert alert-info">
+                        <span>💡</span>
+                        <div>Restez professionnel et bienveillant. L'élève a eu le courage de signaler, montrez-lui qu'il peut vous faire confiance.</div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <span class="step-number">5</span>
+                    <h3>👥 Gestion de l'équipe</h3>
+                    <p>Collaborez efficacement :</p>
+                    <ul>
+                        <li>Ajoutez d'autres administrateurs</li>
+                        <li>Attribuez des signalements à des membres spécifiques</li>
+                        <li>Suivez les actions de chacun</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <span style="font-size: 1.5em;">⚠️</span>
+                <div>
+                    <strong>Confidentialité Absolue :</strong><br>
+                    Ne cherchez JAMAIS à identifier l'auteur d'un signalement. L'anonymat est la base de la confiance.
+                </div>
+            </div>
+
+            <div class="quick-links">
+                <a href="/login" class="quick-link">
+                    <div class="icon">🔑</div>
+                    <div>Se Connecter</div>
+                </a>
+                <a href="/register-school" class="quick-link">
+                    <div class="icon">🏫</div>
+                    <div>Inscrire mon École</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section FAQ -->
+        <div class="content-section" id="faq">
+            <div class="guide-intro">
+                <h2>❓ Questions Fréquentes</h2>
+                <p>Les réponses à vos questions</p>
+            </div>
+
+            <div class="faq">
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        Mon signalement est-il vraiment anonyme ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Oui, à 100% ! SpeakFree ne collecte AUCUNE donnée personnelle. Pas d'adresse IP, pas de cookies de tracking, pas d'email. L'école reçoit uniquement le contenu de ton signalement, jamais ton identité.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        Que se passe-t-il après mon signalement ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        L'administration de ton école reçoit immédiatement une notification. Elle examine ton signalement et peut te contacter via la discussion sécurisée pour te poser des questions. Tu seras tenu informé des actions prises.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        J'ai perdu mes codes, que faire ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Malheureusement, pour garantir l'anonymat, il n'est pas possible de récupérer tes codes. Note-les toujours dans un endroit sûr (capture d'écran, carnet personnel). Si tu as perdu tes codes, tu devras faire un nouveau signalement.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        Puis-je signaler pour quelqu'un d'autre ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Oui, absolument ! Si tu es témoin d'une situation ou si un ami te confie quelque chose, tu peux le signaler. Explique simplement dans ton message que tu témoignes pour quelqu'un d'autre.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        Combien de temps avant une réponse ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Cela dépend de la gravité et de la disponibilité de l'administration. Les cas urgents sont traités en priorité, souvent dans les 24-48h. Tu peux suivre l'état de ton signalement avec ton code de suivi.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        C'est gratuit ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Oui, SpeakFree est entièrement gratuit pour les élèves ET pour les écoles. Notre mission est de rendre les établissements plus sûrs, pas de faire du profit.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        Qui peut voir mes messages ?
+                        <span class="faq-toggle">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        Seuls les administrateurs autorisés de ton école peuvent voir tes messages. Ni les autres élèves, ni les professeurs non-administrateurs, ni même l'équipe SpeakFree ne peuvent y accéder.
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 30px;">
+                <span style="font-size: 1.5em;">💬</span>
+                <div>
+                    <strong>Besoin d'aide ?</strong><br>
+                    D'autres questions ? Contacte l'administration de ton école ou démarre une conversation avec Haniel qui pourra te guider.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Masquer toutes les sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Désactiver tous les tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Afficher la section demandée
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Scroll vers le haut
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleFaq(element) {
+            element.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

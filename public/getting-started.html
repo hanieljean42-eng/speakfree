@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Premiers Pas - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav {
+            background: rgba(255,255,255,0.95);
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        nav .logo {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            color: #5568d3;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .step-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .step-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .step-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .step-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .step-action {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .step-action:hover {
+            background: #5568d3;
+            transform: translateX(5px);
+        }
+
+        .tips-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            color: #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tips-section h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .tip {
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .tip-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .tip-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .tip-text {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .timeline {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            color: #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .timeline h2 {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .timeline-item {
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 4px solid white;
+        }
+
+        .timeline-time {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .timeline-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .timeline-desc {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .tips-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <div class="logo">💬 SpeakFree</div>
+            <a href="/">← Retour à l'accueil</a>
+        </nav>
+
+        <header>
+            <h1>🚀 Premiers Pas</h1>
+            <p>Guide complet pour mettre en place SpeakFree</p>
+        </header>
+
+        <div class="steps">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-icon">🏫</div>
+                <div class="step-title">Inscrire vos écoles</div>
+                <div class="step-description">
+                    Commencez par inscrire vos établissements partenaires sur la plateforme. Chaque école aura un code unique.
+                </div>
+                <a href="/register-school" class="step-action">Inscrire une école →</a>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-icon">👨‍💼</div>
+                <div class="step-title">Créer les administrateurs</div>
+                <div class="step-description">
+                    Pour chaque école, créez un compte administrateur. Les administrateurs gèrent les signalements.
+                </div>
+                <a href="/login" class="step-action">Espace admin →</a>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-icon">🎓</div>
+                <div class="step-title">Informer les étudiants</div>
+                <div class="step-description">
+                    Communiquez à vos étudiants sur la disponibilité de la plateforme. Utilisez le guide d'utilisation.
+                </div>
+                <a href="/guide" class="step-action">Voir le guide →</a>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <div class="step-icon">📝</div>
+                <div class="step-title">Accueillir les signalements</div>
+                <div class="step-description">
+                    Les étudiants peuvent maintenant signaler anonymement les incidents via Haniel ou le formulaire manuel.
+                </div>
+                <a href="/chat-ia" class="step-action">Voir Haniel →</a>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">5</div>
+                <div class="step-icon">⚙️</div>
+                <div class="step-title">Gérer et traiter</div>
+                <div class="step-description">
+                    Les administrateurs traitent les signalements et communiquent avec les signataires via les discussions.
+                </div>
+                <a href="/admin" class="step-action">Espace gestion →</a>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">6</div>
+                <div class="step-icon">📊</div>
+                <div class="step-title">Suivre les statistiques</div>
+                <div class="step-description">
+                    Consultez le tableau de bord pour voir les statistiques en temps réel et l'activité de votre plateforme.
+                </div>
+                <a href="/statistics" class="step-action">Voir stats →</a>
+            </div>
+        </div>
+
+        <div class="tips-section">
+            <h2>💡 Conseils Pratiques</h2>
+            <div class="tips-grid">
+                <div class="tip">
+                    <div class="tip-icon">🔒</div>
+                    <div class="tip-title">Sécurité Garantie</div>
+                    <div class="tip-text">
+                        Tous les signalements sont anonymes et sécurisés. Les données sont chiffrées et protégées.
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <div class="tip-icon">📢</div>
+                    <div class="tip-title">Communication</div>
+                    <div class="tip-text">
+                        Informez vos utilisateurs sur la confidentialité et l'anonymat de la plateforme.
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <div class="tip-icon">🚀</div>
+                    <div class="tip-title">Lancement</div>
+                    <div class="tip-text">
+                        Lancez progressivement avec vos administrateurs avant de l'ouvrir aux étudiants.
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <div class="tip-icon">👥</div>
+                    <div class="tip-title">Implication</div>
+                    <div class="tip-text">
+                        Impliquez les administrateurs dans la gestion et le suivi régulier des signalements.
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <div class="tip-icon">📈</div>
+                    <div class="tip-title">Monitoring</div>
+                    <div class="tip-text">
+                        Suivez régulièrement les statistiques pour améliorer l'efficacité de la plateforme.
+                    </div>
+                </div>
+
+                <div class="tip">
+                    <div class="tip-icon">🤖</div>
+                    <div class="tip-title">Haniel l'IA</div>
+                    <div class="tip-text">
+                        Encouragez l'utilisation de Haniel qui facilite le processus pour les étudiants.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <h2>📅 Calendrier Recommandé</h2>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">Jour 1 - Aujourd'hui</div>
+                <div class="timeline-title">Setup Initial</div>
+                <div class="timeline-desc">
+                    ✓ Base de données initialisée
+                    ✓ Plateforme en ligne
+                    ✓ Accès super admin validé
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-time">Jours 2-3</div>
+                <div class="timeline-title">Configuration</div>
+                <div class="timeline-desc">
+                    □ Inscrire les écoles partenaires
+                    □ Créer les comptes administrateurs
+                    □ Tester les formulaires
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-time">Jours 4-7</div>
+                <div class="timeline-title">Tests Internes</div>
+                <div class="timeline-desc">
+                    □ Tests avec les administrateurs
+                    □ Validation des processus
+                    □ Corrections si nécessaire
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-time">Semaine 2</div>
+                <div class="timeline-title">Lancement</div>
+                <div class="timeline-desc">
+                    □ Communication aux étudiants
+                    □ Ouverture de la plateforme
+                    □ Support actif
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-time">Continu</div>
+                <div class="timeline-title">Maintenance</div>
+                <div class="timeline-desc">
+                    □ Suivi des signalements
+                    □ Monitoring des statistiques
+                    □ Optimisations basées sur les retours
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>SpeakFree</strong> - Vous êtes maintenant prêts à commencer !</p>
+            <p style="margin-top: 15px; font-size: 0.9em;">
+                Développé par <strong>Haniel DJEBLE</strong> © 2025
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

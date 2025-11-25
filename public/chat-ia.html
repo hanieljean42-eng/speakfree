@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Chat avec Haniel - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #fd7e14 0%, #ff9f43 100%);
+            padding: 25px;
+            text-align: center;
+            color: white;
+        }
+
+        .chat-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+        }
+
+        .messages-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            flex-direction: row;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 15px;
+            width: fit-content;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            margin: 0 3px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .chat-input-container {
+            padding: 20px 25px;
+            background: white;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #fd7e14;
+            box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(253, 126, 20, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-box h3 {
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        @media (max-width: 768px) {
+            .messages-container {
+                height: 400px;
+            }
+
+            .message-content {
+                max-width: 80%;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .session-info {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .session-info h3 {
+            color: #fd7e14;
+            margin-bottom: 10px;
+        }
+
+        .session-code {
+            display: inline-block;
+            background: #fd7e14;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← Retour à l'accueil</a>
+
+        <header>
+            <h1>🤖 Chat avec Haniel</h1>
+            <p>Ton assistant intelligent pour t'aider à faire ton signalement</p>
+        </header>
+
+        <div class="session-info" id="sessionInfo" style="display: none;">
+            <h3>📋 Code de conversation</h3>
+            <p>Sauvegarde ce code pour reprendre ta conversation plus tard :</p>
+            <div class="session-code" id="sessionCode"></div>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 Comment ça marche ?</h3>
+            <ul>
+                <li>Haniel est un assistant IA intelligent qui va te guider</li>
+                <li>Discute naturellement avec lui de ce qui s'est passé</li>
+                <li>Il va te poser des questions pour comprendre la situation</li>
+                <li>À la fin, il créera automatiquement ton signalement</li>
+                <li>Tu recevras un code de suivi pour suivre ton dossier</li>
+            </ul>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>🤖 Haniel</h2>
+                <p>Assistant IA SpeakFree</p>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="message bot">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        Bonjour ! Je suis Haniel, ton assistant virtuel SpeakFree. Je suis là pour t'aider à signaler un incident de manière simple et anonyme. 
+                        <br><br>
+                        Pour commencer, peux-tu me dire quel type de situation tu souhaites signaler ? (harcèlement, violence, vol, discrimination, autre...)
+                    </div>
+                </div>
+                <div class="message bot typing-indicator" id="typingIndicator">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="messageInput" 
+                    placeholder="Écris ton message ici..."
+                    onkeypress="if(event.key === 'Enter') sendMessage()"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    Envoyer 📤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversationHistory = [];
+        let sessionId = null;
+        let sessionCode = null;
+
+        // Créer une nouvelle session au chargement
+        fetch('/api/ai-chat/create-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                schoolCode: localStorage.getItem('selectedSchoolCode') || null
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.sessionCode) {
+                sessionCode = data.sessionCode;
+                sessionId = data.sessionId;
+                
+                // Afficher le code de session
+                document.getElementById('sessionInfo').style.display = 'block';
+                document.getElementById('sessionCode').textContent = sessionCode;
+
+                // Charger le message de bienvenue
+                loadSessionMessages();
+            }
+        })
+        .catch(err => console.error('Erreur création session:', err));
+
+        function loadSessionMessages() {
+            fetch(`/api/ai-chat/session/${sessionCode}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.messages) {
+                        data.messages.forEach(msg => {
+                            if (msg.role === 'assistant') {
+                                addMessage('bot', msg.content);
+                            }
+                        });
+                    }
+                })
+                .catch(err => console.error('Erreur chargement messages:', err));
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !sessionCode) return;
+
+            // Désactiver l'input
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            // Afficher le message de l'utilisateur
+            addMessage('user', message);
+            input.value = '';
+
+            // Afficher l'indicateur de saisie
+            showTypingIndicator();
+
+            try {
+                // Appel API backend
+                const response = await fetch('/api/ai-chat/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sessionCode: sessionCode,
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+                
+                hideTypingIndicator();
+
+                if (data.error) {
+                    addMessage('bot', 'Désolé, une erreur s\'est produite. Peux-tu reformuler ta question ?');
+                } else {
+                    addMessage('bot', data.message);
+                }
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                hideTypingIndicator();
+                addMessage('bot', 'Désolé, je rencontre un problème technique. Réessaye dans quelques instants.');
+            }
+
+            // Réactiver l'input
+            input.disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            input.focus();
+        }
+
+        function addMessage(sender, text) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const typingIndicator = document.getElementById('typingIndicator');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.textContent = text;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            
+            messagesContainer.insertBefore(messageDiv, typingIndicator);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').classList.add('active');
+            document.getElementById('messagesContainer').scrollTop = 
+                document.getElementById('messagesContainer').scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').classList.remove('active');
+        }
+
+        // Focus automatique sur l'input
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>

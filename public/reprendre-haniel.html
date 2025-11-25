@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔑 Reprendre ma Conversation - Haniel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .access-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .access-header {
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .access-header .icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .access-header h1 {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .access-header p {
+            opacity: 0.9;
+            font-size: 1.05em;
+        }
+
+        .access-body {
+            padding: 40px 30px;
+            color: #333;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+            display: none;
+        }
+
+        .alert-error.active {
+            display: flex;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+            display: none;
+        }
+
+        .alert-success.active {
+            display: flex;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            font-family: monospace;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #fd7e14;
+            box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+        }
+
+        .helper-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(253, 126, 20, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+            color: #999;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .secondary-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .secondary-btn {
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+            font-size: 0.95em;
+            display: block;
+        }
+
+        .secondary-btn:hover {
+            background: #e9ecef;
+            border-color: #fd7e14;
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .info-box h3 {
+            color: #fd7e14;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #999;
+            text-decoration: none;
+            transition: all 0.3s;
+            text-align: center;
+            width: 100%;
+        }
+
+        .back-link:hover {
+            color: #fd7e14;
+        }
+
+        @media (max-width: 480px) {
+            .access-container {
+                border-radius: 0;
+            }
+
+            .access-header {
+                padding: 30px 20px;
+            }
+
+            .access-body {
+                padding: 30px 20px;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #fd7e14;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="access-container">
+            <div class="access-header">
+                <div class="icon">🤖</div>
+                <h1>Reprendre ma Conversation</h1>
+                <p>Avec Haniel, ton assistant IA</p>
+            </div>
+
+            <div class="access-body">
+                <div class="alert alert-info">
+                    <span style="font-size: 1.5em;">💡</span>
+                    <div>
+                        <strong>Besoin de ton code de conversation</strong><br>
+                        Entre le code que Haniel t'a donné lors de ta dernière session
+                    </div>
+                </div>
+
+                <div class="alert alert-error" id="errorAlert">
+                    <span style="font-size: 1.5em;">❌</span>
+                    <div id="errorMessage">Code de conversation introuvable</div>
+                </div>
+
+                <div class="alert alert-success" id="successAlert">
+                    <span style="font-size: 1.5em;">✅</span>
+                    <div>Conversation trouvée ! Redirection...</div>
+                </div>
+
+                <div class="info-box">
+                    <h3>📋 Format du code</h3>
+                    <ul>
+                        <li>Le code commence par <strong>CHAT-</strong></li>
+                        <li>Suivi de 9 caractères (lettres et chiffres)</li>
+                        <li>Exemple: <strong>CHAT-ABC123XYZ</strong></li>
+                    </ul>
+                </div>
+
+                <form id="accessForm">
+                    <div class="form-group">
+                        <label for="sessionCode">🔑 Code de Conversation</label>
+                        <input 
+                            type="text" 
+                            class="code-input" 
+                            id="sessionCode" 
+                            required 
+                            placeholder="CHAT-XXXXXXXXX"
+                            maxlength="14"
+                            pattern="CHAT-[A-Z0-9]{9}"
+                        >
+                        <div class="helper-text">
+                            Entre ton code de conversation Haniel
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn" id="accessBtn">
+                        🚀 Reprendre la Conversation
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="color: #666;">Chargement de ta conversation...</p>
+                </div>
+
+                <div class="divider">OU</div>
+
+                <div class="secondary-actions">
+                    <a href="/chat-ia" class="secondary-btn">
+                        ✨ Commencer une Nouvelle Conversation
+                    </a>
+                    <a href="/" class="secondary-btn">
+                        🏠 Retour à l'Accueil
+                    </a>
+                </div>
+
+                <a href="#" class="back-link" onclick="showHelp(); return false;">
+                    ❓ Je n'ai pas mon code / Aide
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-formatage du code
+        document.getElementById('sessionCode').addEventListener('input', function(e) {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+            
+            // Auto-ajouter "CHAT-" si pas présent
+            if (!value.startsWith('CHAT-') && value.length > 0) {
+                if (value.startsWith('CHAT')) {
+                    value = value.substring(0, 4) + '-' + value.substring(4);
+                } else {
+                    value = 'CHAT-' + value;
+                }
+            }
+            
+            // Limiter à 14 caractères (CHAT- + 9 caractères)
+            if (value.length > 14) {
+                value = value.substring(0, 14);
+            }
+            
+            e.target.value = value;
+        });
+
+        // Gestion du formulaire
+        document.getElementById('accessForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const sessionCode = document.getElementById('sessionCode').value.trim();
+            const accessBtn = document.getElementById('accessBtn');
+            const errorAlert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('accessForm');
+
+            // Masquer les alertes
+            errorAlert.classList.remove('active');
+            successAlert.classList.remove('active');
+
+            // Validation du format
+            if (!sessionCode.match(/^CHAT-[A-Z0-9]{9}$/)) {
+                errorAlert.classList.add('active');
+                document.getElementById('errorMessage').textContent = 
+                    'Format de code invalide. Le code doit être au format CHAT-XXXXXXXXX';
+                return;
+            }
+
+            // Désactiver le bouton et afficher le loading
+            accessBtn.disabled = true;
+            form.style.display = 'none';
+            loading.classList.add('active');
+
+            // Simuler la recherche de la session (remplacer par vraie API)
+            setTimeout(() => {
+                // Exemples de codes de test
+                const testSessions = [
+                    'CHAT-ABC123XYZ',
+                    'CHAT-TEST12345',
+                    'CHAT-DEMO67890'
+                ];
+
+                if (testSessions.includes(sessionCode) || sessionCode.startsWith('CHAT-')) {
+                    // Session trouvée
+                    successAlert.classList.add('active');
+                    loading.classList.remove('active');
+
+                    // Redirection vers le chat avec le code de session
+                    setTimeout(() => {
+                        window.location.href = `/chat-ia?session=${sessionCode}`;
+                    }, 1500);
+                } else {
+                    // Session non trouvée
+                    errorAlert.classList.add('active');
+                    document.getElementById('errorMessage').textContent = 
+                        'Code de conversation introuvable. Vérifie ton code ou commence une nouvelle conversation.';
+                    
+                    loading.classList.remove('active');
+                    form.style.display = 'block';
+                    accessBtn.disabled = false;
+
+                    // Animation d'erreur
+                    document.querySelector('.access-container').style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        document.querySelector('.access-container').style.animation = '';
+                    }, 500);
+                }
+            }, 2000);
+        });
+
+        // Afficher l'aide
+        function showHelp() {
+            const helpMessage = `
+📋 AIDE - Code de Conversation
+
+🔍 Où trouver mon code ?
+• Le code t'a été donné par Haniel lors de ta première conversation
+• Il apparaît en haut de la fenêtre de chat
+• Format: CHAT-XXXXXXXXX (exemple: CHAT-ABC123XYZ)
+
+❓ Je n'ai pas noté mon code
+Si tu as perdu ton code de conversation :
+1. Tu peux commencer une nouvelle conversation avec Haniel
+2. Haniel te donnera un nouveau code à sauvegarder
+3. Pense à noter ce code pour la prochaine fois !
+
+💡 Astuce
+Sauvegarde ton code de conversation dans tes notes ou prends une capture d'écran pour ne pas le perdre.
+
+🆕 Nouvelle conversation
+Tu peux toujours commencer une nouvelle conversation en cliquant sur "Commencer une Nouvelle Conversation" ci-dessous.
+            `;
+            
+            alert(helpMessage);
+        }
+
+        // Animation de secousse
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Focus automatique sur l'input
+        document.getElementById('sessionCode').focus();
+    </script>
+</body>
+</html>

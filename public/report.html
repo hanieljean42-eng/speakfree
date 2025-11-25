@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 Signalement - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            color: #333;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        .form-group label .required {
+            color: #dc3545;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        .file-upload:hover {
+            background: #e9ecef;
+            border-color: #5568d3;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            margin-top: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .file-item .file-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-item .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-item .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .helper-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            text-align: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            color: #28a745;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .modal-content .codes {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .modal-content .code {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 25px;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← Retour à l'accueil</a>
+
+        <header>
+            <h1>📝 Nouveau Signalement</h1>
+            <p>Remplis ce formulaire de manière anonyme et sécurisée</p>
+        </header>
+
+        <div class="form-container">
+            <div class="alert alert-info">
+                <span style="font-size: 1.5em;">🔒</span>
+                <div>
+                    <strong>100% Anonyme</strong><br>
+                    Aucune donnée personnelle n'est collectée. Tu resteras totalement anonyme.
+                </div>
+            </div>
+
+            <form id="reportForm">
+                <div class="form-group">
+                    <label>Code École <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="schoolCode" required placeholder="Ex: ECOLE-ABC123">
+                    <div class="helper-text">Entre le code de ton établissement scolaire</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Type d'incident <span class="required">*</span></label>
+                    <select class="form-control" id="incidentType" required>
+                        <option value="">-- Sélectionne un type --</option>
+                        <option value="harcelement">🎭 Harcèlement</option>
+                        <option value="violence">⚡ Violence physique</option>
+                        <option value="violence_verbale">💬 Violence verbale</option>
+                        <option value="discrimination">🚫 Discrimination</option>
+                        <option value="vol">💰 Vol</option>
+                        <option value="drogue">💊 Drogue/Alcool</option>
+                        <option value="cyber">💻 Cyberharcèlement</option>
+                        <option value="autre">📌 Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Description de l'incident <span class="required">*</span></label>
+                    <textarea class="form-control" id="description" required placeholder="Décris ce qui s'est passé de manière détaillée..."></textarea>
+                    <div class="helper-text">Plus tu donnes de détails, mieux l'école pourra intervenir</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Date de l'incident <span class="required">*</span></label>
+                    <input type="date" class="form-control" id="incidentDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Heure approximative</label>
+                    <input type="time" class="form-control" id="incidentTime">
+                </div>
+
+                <div class="form-group">
+                    <label>Lieu de l'incident <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="location" required placeholder="Ex: Cour de récréation, Couloir du 2ème étage, Toilettes...">
+                </div>
+
+                <div class="form-group">
+                    <label>Y avait-il des témoins ?</label>
+                    <select class="form-control" id="witnesses">
+                        <option value="">-- Sélectionne --</option>
+                        <option value="oui">Oui</option>
+                        <option value="non">Non</option>
+                        <option value="ne_sais_pas">Je ne sais pas</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Informations supplémentaires</label>
+                    <textarea class="form-control" id="additionalInfo" placeholder="Ajoute d'autres détails si nécessaire..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>📎 Photos ou Vidéos (optionnel)</label>
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                        <div class="icon">📸</div>
+                        <p><strong>Clique ici pour ajouter des fichiers</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Max 10 MB par fichier • Photos et vidéos acceptées</p>
+                        <input type="file" id="fileInput" multiple accept="image/*,video/*" onchange="handleFiles(this.files)">
+                    </div>
+                    <div class="file-list" id="fileList"></div>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    📤 Envoyer le Signalement
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de succès -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <h2>✅ Signalement envoyé !</h2>
+            <p>Ton signalement a été transmis de manière anonyme et sécurisée.</p>
+            
+            <div class="codes">
+                <p><strong>📋 Code de suivi :</strong></p>
+                <div class="code" id="trackingCode"></div>
+                
+                <p style="margin-top: 15px;"><strong>🔑 Code d'accès discussion :</strong></p>
+                <div class="code" id="discussionCode"></div>
+            </div>
+
+            <p style="margin: 20px 0; color: #666;">
+                <strong>⚠️ IMPORTANT :</strong> Sauvegarde ces codes !<br>
+                Tu en auras besoin pour suivre ton signalement et discuter avec l'école.
+            </p>
+
+            <button class="btn" onclick="window.location.href='/'">
+                🏠 Retour à l'accueil
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let uploadedFiles = [];
+
+        // Gérer l'upload de fichiers
+        function handleFiles(files) {
+            const fileList = document.getElementById('fileList');
+            
+            Array.from(files).forEach(file => {
+                // Vérifier la taille (10 MB max)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`❌ Le fichier "${file.name}" est trop volumineux (max 10 MB)`);
+                    return;
+                }
+
+                uploadedFiles.push(file);
+                
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-name">
+                        <span>${file.type.startsWith('image/') ? '🖼️' : '🎥'}</span>
+                        <span>${file.name}</span>
+                        <span style="color: #666; font-size: 0.9em;">(${formatFileSize(file.size)})</span>
+                    </div>
+                    <button type="button" class="remove-btn" onclick="removeFile('${file.name}')">❌</button>
+                `;
+                
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(fileName) {
+            uploadedFiles = uploadedFiles.filter(f => f.name !== fileName);
+            
+            const fileList = document.getElementById('fileList');
+            Array.from(fileList.children).forEach(item => {
+                if (item.textContent.includes(fileName)) {
+                    item.remove();
+                }
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Soumettre le formulaire
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Envoi en cours...';
+
+            // Préparer FormData pour l'upload de fichiers
+            const formData = new FormData();
+            formData.append('schoolCode', document.getElementById('schoolCode').value);
+            formData.append('incidentType', document.getElementById('incidentType').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('incidentDate', document.getElementById('incidentDate').value);
+            formData.append('incidentTime', document.getElementById('incidentTime').value);
+            formData.append('location', document.getElementById('location').value);
+            formData.append('witnesses', document.getElementById('witnesses').value);
+            formData.append('additionalInfo', document.getElementById('additionalInfo').value);
+
+            // Ajouter les fichiers
+            uploadedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const response = await fetch('/api/reports/create', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('❌ Erreur: ' + data.error);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '📤 Envoyer le Signalement';
+                } else {
+                    // Afficher les codes
+                    document.getElementById('trackingCode').textContent = data.trackingCode;
+                    document.getElementById('discussionCode').textContent = data.discussionCode;
+
+                    // Afficher le modal
+                    document.getElementById('successModal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('❌ Erreur de connexion. Veuillez réessayer.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 Envoyer le Signalement';
+            }
+        });
+
+        // Définir la date max à aujourd'hui
+        document.getElementById('incidentDate').max = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>

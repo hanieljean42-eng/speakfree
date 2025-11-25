@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏫 Écoles - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav {
+            background: rgba(255,255,255,0.95);
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        nav .logo {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            color: #5568d3;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .schools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .school-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .school-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .school-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .school-code {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .school-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .school-type {
+            display: inline-block;
+            background: #764ba2;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .school-info {
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .school-info-label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .school-stats {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .school-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.2em;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #ff6b6b;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            opacity: 0.9;
+            margin-top: 50px;
+        }
+
+        .filter-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            .schools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .school-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <div class="logo">💬 SpeakFree</div>
+            <a href="/">← Retour à l'accueil</a>
+        </nav>
+
+        <header>
+            <h1>🏫 Écoles Partenaires</h1>
+            <p>Découvrez tous les établissements utilisant SpeakFree</p>
+            <p style="font-size: 0.95em; margin-top: 15px; opacity: 0.85;">
+                ℹ️ Les écoles partenaires apparaîtront ici une fois qu'elles auront été inscrites sur la plateforme.
+            </p>
+        </header>
+
+        <div class="filter-section">
+            <div class="filter-group">
+                <span>Filtrer par type:</span>
+                <button class="filter-btn active" onclick="filterByType('all')">Tous</button>
+                <button class="filter-btn" onclick="filterByType('Lycée')">🎓 Lycée</button>
+                <button class="filter-btn" onclick="filterByType('Collège')">📚 Collège</button>
+                <button class="filter-btn" onclick="filterByType('Lycée Technique')">⚙️ Lycée Technique</button>
+                <button class="filter-btn" onclick="filterByType('Lycée Professionnel')">🏭 Lycée Pro</button>
+            </div>
+        </div>
+
+        <div id="schoolsLoading" class="loading">
+            <div class="spinner"></div>
+            Chargement des écoles...
+        </div>
+
+        <div id="schoolsContent" style="display: none;">
+            <div class="schools-grid" id="schoolsGrid">
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;">
+            ❌ Erreur lors du chargement des écoles. Veuillez réessayer plus tard.
+        </div>
+    </div>
+
+    <footer>
+        <p><strong>SpeakFree</strong> - Plateforme de signalement sécurisée</p>
+        <p>Développé par <strong>Haniel DJEBLE</strong> © 2025</p>
+    </footer>
+
+    <script>
+        let allSchools = [];
+        let currentFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSchools();
+        });
+
+        async function loadSchools() {
+            try {
+                const response = await fetch('/api/schools');
+                const data = await response.json();
+
+                allSchools = data.schools || [];
+
+                if (allSchools.length === 0) {
+                    document.getElementById('schoolsLoading').style.display = 'none';
+                    document.getElementById('errorMessage').innerHTML = '⚠️ Aucune école trouvée pour le moment.';
+                    document.getElementById('errorMessage').style.display = 'block';
+                } else {
+                    displaySchools(allSchools);
+                }
+
+                console.log('✅ Écoles chargées:', allSchools);
+            } catch (error) {
+                console.error('❌ Erreur chargement écoles:', error);
+                document.getElementById('schoolsLoading').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        }
+
+        function filterByType(type) {
+            currentFilter = type;
+
+            // Mettre à jour les boutons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filtrer et afficher
+            const filtered = type === 'all' 
+                ? allSchools 
+                : allSchools.filter(school => school.type === type);
+
+            displaySchools(filtered);
+        }
+
+        function displaySchools(schools) {
+            const grid = document.getElementById('schoolsGrid');
+            grid.innerHTML = '';
+
+            if (schools.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px; background: white; border-radius: 10px;">Aucune école trouvée pour ce type.</div>';
+            } else {
+                schools.forEach(school => {
+                    const card = document.createElement('div');
+                    card.className = 'school-card';
+                    card.innerHTML = `
+                        <div class="school-code">${school.school_code}</div>
+                        <div class="school-name">${school.name}</div>
+                        <div class="school-type">${school.type}</div>
+                        
+                        <div class="school-info">
+                            <span class="school-info-label">📍 Localisation:</span><br>
+                            ${school.city}${school.district ? ' - ' + school.district : ''}
+                        </div>
+
+                        <div class="school-info">
+                            <span class="school-info-label">📮 Adresse:</span><br>
+                            ${school.address}
+                        </div>
+
+                        <div class="school-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${school.student_count || 0}</div>
+                                <div class="stat-label">Élèves</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${school.stats?.total || 0}</div>
+                                <div class="stat-label">Signalements</div>
+                            </div>
+                        </div>
+
+                        <div class="school-status ${school.status === 'active' ? 'status-active' : 'status-pending'}">
+                            ${school.status === 'active' ? '✅ Actif' : '⏳ En attente'}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+
+            document.getElementById('schoolsLoading').style.display = 'none';
+            document.getElementById('schoolsContent').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

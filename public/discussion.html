@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 Discussion - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            color: #333;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .login-container h2 {
+            color: #6f42c1;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .chat-container.active {
+            display: block;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            padding: 25px;
+            color: white;
+        }
+
+        .chat-header h2 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .chat-header .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .messages-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.school {
+            flex-direction: row;
+        }
+
+        .message.student {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+
+        .message.school .message-avatar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .message.student .message-avatar {
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message.school .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message.student .message-content {
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px 25px;
+            background: white;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #6f42c1, #9b59b6);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .report-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .report-info h3 {
+            color: #6f42c1;
+            margin-bottom: 15px;
+        }
+
+        .report-info .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .report-info .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .report-info .label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .report-info .value {
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-badge.pending {
+            background: #ffc107;
+            color: #856404;
+        }
+
+        .status-badge.in-progress {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .status-badge.resolved {
+            background: #28a745;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .messages-container {
+                height: 400px;
+            }
+
+            .message-content {
+                max-width: 80%;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-btn">← Retour à l'accueil</a>
+
+        <header>
+            <h1>💬 Discussion Sécurisée</h1>
+            <p>Communique anonymement avec ton école</p>
+        </header>
+
+        <!-- Formulaire de connexion -->
+        <div class="login-container" id="loginContainer">
+            <h2>🔑 Accéder à la Discussion</h2>
+
+            <div class="alert alert-info">
+                <span style="font-size: 1.5em;">🔒</span>
+                <div>
+                    <strong>Anonymat Garanti</strong><br>
+                    Ta discussion reste totalement anonyme et sécurisée.
+                </div>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Code d'Accès Discussion</label>
+                    <input type="text" class="form-control" id="discussionCode" required placeholder="Ex: DSC-ABC123XYZ">
+                </div>
+
+                <button type="submit" class="btn" id="loginBtn">
+                    🚀 Accéder à la Discussion
+                </button>
+            </form>
+        </div>
+
+        <!-- Zone de chat (cachée initialement) -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                <h2>💬 Discussion Anonyme</h2>
+                <div class="status">
+                    <span class="status-indicator"></span>
+                    <span>École connectée</span>
+                </div>
+            </div>
+
+            <!-- Informations du signalement -->
+            <div class="report-info" id="reportInfo">
+                <h3>📋 Informations du Signalement</h3>
+                <div class="info-item">
+                    <span class="label">Code de suivi:</span>
+                    <span class="value" id="trackingCode">RPT-ABC123XYZ</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Date de création:</span>
+                    <span class="value" id="creationDate">24/11/2024</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Statut:</span>
+                    <span class="value">
+                        <span class="status-badge in-progress">En cours de traitement</span>
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Type:</span>
+                    <span class="value" id="incidentType">Harcèlement</span>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <!-- Les messages seront ajoutés ici dynamiquement -->
+            </div>
+
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="messageInput" 
+                    placeholder="Écris ton message..."
+                    onkeypress="if(event.key === 'Enter') sendMessage()"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    Envoyer 📤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let discussionData = null;
+
+        // Connexion à la discussion
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const code = document.getElementById('discussionCode').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Connexion...';
+
+            // Appel API pour vérifier le code
+            fetch(`/api/discussions/${code}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('❌ Code invalide. Vérifie ton code d\'accès.');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = '🚀 Accéder à la Discussion';
+                    } else {
+                        // Charger la discussion
+                        loadDiscussion(data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert('❌ Erreur de connexion. Vérifie ton code.');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '🚀 Accéder à la Discussion';
+                });
+        });
+
+        function loadDiscussion(data) {
+            discussionData = data;
+            
+            // Afficher le chat
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('chatContainer').classList.add('active');
+
+            // Remplir les informations
+            document.getElementById('trackingCode').textContent = data.report.trackingCode;
+            document.getElementById('creationDate').textContent = new Date(data.report.createdAt).toLocaleDateString('fr-FR');
+            document.getElementById('incidentType').textContent = data.report.incidentType;
+
+            // Charger les messages
+            data.messages.forEach(msg => {
+                addMessage(msg.sender_type === 'school' ? 'school' : 'student', msg.message, new Date(msg.created_at).toLocaleString('fr-FR'));
+            });
+
+            // Focus sur l'input
+            document.getElementById('messageInput').focus();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Désactiver temporairement
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+
+            // Envoyer au backend
+            fetch(`/api/discussions/${discussionData.report.discussionCode}/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    senderType: 'student'
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert('❌ Erreur: ' + data.error);
+                } else {
+                    // Ajouter le message à l'interface
+                    addMessage('student', message, 'À l\'instant');
+                    input.value = '';
+                }
+                
+                // Réactiver
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('❌ Erreur d\'envoi. Réessaye.');
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+            });
+        }
+
+        function addMessage(sender, content, time) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'school' ? '🏫' : '👤';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = `
+                <div>${content}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "speakfree-platform",
+  "version": "1.0.0",
+  "description": "SpeakFree - Plateforme de signalement anonyme pour écoles",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "22.21.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo \"Build complete\""
+  },
+  "keywords": ["speakfree", "signalement", "école"],
+  "author": "SpeakFree Team",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {}
+}
