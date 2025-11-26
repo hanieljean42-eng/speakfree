@@ -132,12 +132,12 @@ app.use(helmet({
     }
 }));
 
-// CORS
+// CORS - Accepter toutes les origines (frontend et Netlify)
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? 'https://votre-domaine.com' 
-        : 'http://localhost:3000',
-    credentials: true
+    origin: true,  // Accepter toutes les origines
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Rate limiting global
