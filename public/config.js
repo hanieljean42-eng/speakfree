@@ -1,11 +1,24 @@
 // config.js - Configuration centralisée de l'API
 // Utilisé par tous les fichiers frontend
 
+console.log('[CONFIG] Initialisation...');
+
+// Déterminer l'URL de base
+function getApiUrl() {
+    const hostname = window.location.hostname;
+    console.log(`[CONFIG] Hostname: ${hostname}`);
+    
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+        return 'http://localhost:3000';
+    }
+    if (hostname.includes('netlify.app')) {
+        return 'https://speakfree-api.onrender.com';
+    }
+    return window.location.protocol + '//' + hostname;
+}
+
 const CONFIG = {
-    // URL de base de l'API
-    API_URL: window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000'
-        : (window.location.protocol + '//' + window.location.host),
+    API_URL: getApiUrl(),
     
     // Endpoints
     ENDPOINTS: {
@@ -84,79 +97,72 @@ async function apiCall(endpoint, options = {}) {
     const url = CONFIG.API_URL + endpoint;
     const token = localStorage.getItem('speakfree_token');
     
-    const defaultOptions = {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        timeout: CONFIG.TIMEOUT
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
     };
-
-    // Ajouter le token d'authentification s'il existe
+    
     if (token) {
-        defaultOptions.headers['Authorization'] = `Bearer ${token}`;
+        headers['Authorization'] = `Bearer ${token}`;
     }
-
-    // Fusionner avec les options fournies
+    
     const fetchOptions = {
-        ...defaultOptions,
-        ...options,
-        headers: {
-            ...defaultOptions.headers,
-            ...options.headers
-        }
+        method: options.method || 'GET',
+        headers: { ...headers, ...(options.headers || {}) }
     };
-
-    // Retry logic
-    let attempt = 0;
-    while (attempt < CONFIG.MAX_RETRIES) {
+    
+    if (options.body) {
+        fetchOptions.body = options.body;
+    }
+    
+    console.log(`[API] ${fetchOptions.method} ${url}`);
+    
+    let lastError;
+    
+    for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
         try {
-            console.log(`[API] ${fetchOptions.method} ${endpoint} (tentative ${attempt + 1}/${CONFIG.MAX_RETRIES})`);
+            const response = await fetch(url, fetchOptions);
+            console.log(`[API] Réponse: ${response.status}`);
             
-            const response = await Promise.race([
-                fetch(url, fetchOptions),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout')), CONFIG.TIMEOUT)
-                )
-            ]);
-
-            // Vérifier le statut HTTP
             if (!response.ok) {
-                const error = await response.json().catch(() => ({ error: response.statusText }));
-                console.error(`[API ERROR] ${response.status} - ${response.statusText}`, error);
-                throw new Error(`${response.status}: ${error.error || response.statusText}`);
+                const text = await response.text();
+                let errObj = { error: text };
+                try {
+                    errObj = JSON.parse(text);
+                } catch (e) {}
+                throw new Error(`HTTP ${response.status}: ${errObj.error || errObj.message || response.statusText}`);
             }
-
-            // Parser la réponse
+            
             const data = await response.json();
-            console.log(`[API SUCCESS] ${endpoint}`, data);
+            console.log(`[API] ✅ OK:`, data);
             return data;
-
+            
         } catch (error) {
-            attempt++;
-            console.warn(`[API RETRY] Tentative ${attempt}/${CONFIG.MAX_RETRIES} échouée:`, error.message);
+            lastError = error;
+            console.error(`[API] Tentative ${attempt} échouée:`, error.message);
             
             if (attempt < CONFIG.MAX_RETRIES) {
-                // Attendre avant de réessayer
-                await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * attempt));
-            } else {
-                // Dernier essai échoué
-                console.error(`[API FAILED] ${endpoint} - Tous les essais échoués`, error);
-                throw error;
+                await new Promise(r => setTimeout(r, 500 * attempt));
             }
         }
     }
+    
+    console.error(`[API] ❌ ÉCHOUÉ:`, lastError.message);
+    throw lastError;
 }
 
 /**
- * Vérifier la connexion au backend
+ * Vérifier la santé du backend
  */
 async function checkBackendHealth() {
     try {
+        console.log('[HEALTH] Vérification...');
         const response = await fetch(CONFIG.API_URL + '/api/schools/stats/global');
-        return response.ok;
-    } catch {
+        const ok = response.ok;
+        console.log(`[HEALTH] ${ok ? '✅ OK' : '❌ FAIL'}`);
+        return ok;
+    } catch (err) {
+        console.error('[HEALTH] Erreur:', err.message);
         return false;
     }
 }
@@ -174,9 +180,10 @@ async function apiLogin(email, password) {
 /**
  * Déconnexion
  */
-async function apiLogout() {
+function apiLogout() {
     localStorage.removeItem('speakfree_token');
     localStorage.removeItem('speakfree_admin');
+    console.log('[AUTH] Logout');
     return true;
 }
 
@@ -194,3 +201,6 @@ window.checkBackendHealth = checkBackendHealth;
 window.apiLogin = apiLogin;
 window.apiLogout = apiLogout;
 window.apiGetStats = apiGetStats;
+
+console.log('[CONFIG] ✅ Chargé');
+console.log(`[CONFIG] API_URL = ${CONFIG.API_URL}`);

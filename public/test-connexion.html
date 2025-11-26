@@ -234,28 +234,32 @@
     <script>
         const tests = [
             {
-                name: 'Vérifier API URL',
+                name: 'API URL Configuration',
                 id: 'api-url',
                 run: async () => {
-                    log(`API URL: ${CONFIG.API_URL}`, 'info');
-                    return CONFIG.API_URL !== '' ? 'ok' : 'Erreur: API URL vide';
+                    console.log('🧪 Test: API URL');
+                    if (!CONFIG || !CONFIG.API_URL) return 'Erreur: CONFIG non chargé';
+                    console.log(`API URL: ${CONFIG.API_URL}`);
+                    return `ok: ${CONFIG.API_URL}`;
                 }
             },
             {
-                name: 'Connectivité Backend',
+                name: 'Backend Health Check',
                 id: 'backend-health',
                 run: async () => {
-                    const isHealthy = await checkBackendHealth();
-                    return isHealthy ? 'ok' : 'Erreur: Backend non accessible';
+                    console.log('🧪 Test: Backend health');
+                    const healthy = await checkBackendHealth();
+                    return healthy ? 'ok: Backend accessible' : 'Erreur: Backend non accessible';
                 }
             },
             {
                 name: 'GET /api/schools/stats/global',
                 id: 'schools-stats',
                 run: async () => {
+                    console.log('🧪 Test: Schools stats');
                     try {
                         const result = await apiCall(CONFIG.ENDPOINTS.schools.stats);
-                        return `ok: ${JSON.stringify(result).substring(0, 100)}...`;
+                        return `ok: ${JSON.stringify(result).substring(0, 80)}...`;
                     } catch (e) {
                         return `Erreur: ${e.message}`;
                     }
@@ -265,9 +269,10 @@
                 name: 'GET /api/super-admin/stats',
                 id: 'super-admin-stats',
                 run: async () => {
+                    console.log('🧪 Test: Super admin stats');
                     try {
                         const result = await apiCall(CONFIG.ENDPOINTS.superAdmin.stats);
-                        return `ok: ${JSON.stringify(result).substring(0, 100)}...`;
+                        return `ok: ${JSON.stringify(result).substring(0, 80)}...`;
                     } catch (e) {
                         return `Erreur: ${e.message}`;
                     }
@@ -277,6 +282,7 @@
                 name: 'GET /api/super-admin/schools/pending',
                 id: 'pending-schools',
                 run: async () => {
+                    console.log('🧪 Test: Pending schools');
                     try {
                         const result = await apiCall(CONFIG.ENDPOINTS.superAdmin.schools.pending);
                         return `ok: ${result.length || 0} écoles en attente`;
@@ -289,6 +295,7 @@
                 name: 'CORS Configuration',
                 id: 'cors-check',
                 run: async () => {
+                    console.log('🧪 Test: CORS');
                     try {
                         const response = await fetch(CONFIG.API_URL + '/api/schools/stats/global', {
                             headers: { 'Content-Type': 'application/json' }
@@ -300,20 +307,22 @@
                 }
             },
             {
-                name: 'Authentification Token',
+                name: 'Token localStorage',
                 id: 'auth-token',
                 run: async () => {
+                    console.log('🧪 Test: Token');
                     const token = localStorage.getItem('speakfree_token');
-                    return token ? `ok: Token trouvé (${token.substring(0, 20)}...)` : 'Pas de token (normal si pas login)';
+                    return token ? `ok: Token trouvé` : 'ok: Pas de token (normal)';
                 }
             },
             {
                 name: 'localStorage Availability',
                 id: 'localstorage',
                 run: async () => {
+                    console.log('🧪 Test: localStorage');
                     try {
-                        localStorage.setItem('test', 'ok');
-                        localStorage.removeItem('test');
+                        localStorage.setItem('_test', 'ok');
+                        localStorage.removeItem('_test');
                         return 'ok: localStorage disponible';
                     } catch (e) {
                         return `Erreur: ${e.message}`;
