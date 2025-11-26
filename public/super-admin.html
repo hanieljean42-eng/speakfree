@@ -483,9 +483,10 @@
 
         // Charger les écoles en attente
         function loadPendingSchools() {
-            fetch('/api/super-admin/schools/pending')
-                .then(response => response.json())
+            console.log('[PENDING] Chargement des écoles en attente...');
+            apiCall(CONFIG.ENDPOINTS.superAdmin.schools.pending)
                 .then(data => {
+                    console.log('[PENDING] Réponse reçue:', data);
                     const pendingContainer = document.getElementById('pending');
                     
                     if (!data.schools || data.schools.length === 0) {
@@ -552,15 +553,17 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Erreur lors du chargement des écoles:', error);
+                    console.error('[PENDING] Erreur complète:', error);
+                    document.getElementById('pending').innerHTML = `<div class="empty-state"><div class="icon">❌</div><h3>Erreur de chargement</h3><p>${error.message}</p></div>`;
                 });
         }
 
         // Charger les écoles actives
         function loadActiveSchools() {
-            fetch('/api/super-admin/schools/active')
-                .then(response => response.json())
+            console.log('[ACTIVE] Chargement des écoles actives...');
+            apiCall(CONFIG.ENDPOINTS.superAdmin.schools.active)
                 .then(data => {
+                    console.log('[ACTIVE] Réponse reçue:', data);
                     const activeContainer = document.getElementById('active');
                     
                     if (!data.schools || data.schools.length === 0) {
@@ -623,7 +626,8 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Erreur lors du chargement des écoles actives:', error);
+                    console.error('[ACTIVE] Erreur complète:', error);
+                    document.getElementById('active').innerHTML = `<div class="empty-state"><div class="icon">❌</div><h3>Erreur de chargement</h3><p>${error.message}</p></div>`;
                 });
         }
 
@@ -671,74 +675,85 @@
         }
 
         function approveSchool(schoolId, schoolCode, phoneNumber, schoolName) {
+            console.log(`[APPROVE] Approbation école ${schoolId}`);
             const password = prompt('Générer le mot de passe (laisser vide pour générer automatiquement):', '');
             
             if (password === null) return; // Annulation
             
-            fetch(`/api/super-admin/schools/${schoolId}/approve`, {
+            const endpoint = `/api/super-admin/schools/${schoolId}/approve`;
+            console.log(`[APPROVE] Endpoint: ${endpoint}`);
+            console.log(`[APPROVE] Code: 200700, Password: ${password}`);
+            
+            apiCall(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     code: '200700',
                     defaultPassword: password || undefined
                 })
             })
-            .then(res => res.json())
             .then(data => {
+                console.log('[APPROVE] Réponse:', data);
+                
                 if (data.error) {
                     alert('❌ Erreur: ' + data.error);
-                } else {
-                    const finalPassword = data.defaultPassword || password;
-                    
-                    // Nettoyer le numéro pour WhatsApp (enlever les espaces)
-                    const cleanPhone = phoneNumber.replace(/\s+/g, '');
-                    
-                    // Construire le message WhatsApp
-                    const whatsappMessage = `Bonjour ${schoolName},\n\n` +
-                        `✅ Votre demande d'inscription à SpeakFree a été approuvée !\n\n` +
-                        `📋 Vos informations de connexion:\n` +
-                        `🔐 Code École: ${data.schoolCode}\n` +
-                        `🔑 Mot de passe: ${finalPassword}\n\n` +
-                        `🌐 Accédez à la plateforme: http://localhost:3000/login\n\n` +
-                        `Bienvenue sur SpeakFree! 🎉`;
-                    
-                    // Lien WhatsApp (extraire les chiffres)
-                    const whatsappLink = `https://wa.me/${cleanPhone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
-                    
-                    alert(`✅ École approuvée!\n\nInformations de connexion:\n- Code: ${data.schoolCode}\n- Mot de passe: ${finalPassword}\n\nUn message WhatsApp va être envoyé.`);
-                    
-                    // Ouvrir WhatsApp
-                    window.open(whatsappLink, '_blank');
-                    
-                    // Recharger les écoles
-                    setTimeout(() => {
-                        loadPendingSchools();
-                        loadActiveSchools();
-                        loadStatistics();
-                    }, 500);
+                    return;
                 }
+                
+                const finalPassword = data.defaultPassword || password;
+                console.log('[APPROVE] Mot de passe final:', finalPassword);
+                
+                // Nettoyer le numéro pour WhatsApp (enlever les espaces)
+                const cleanPhone = phoneNumber.replace(/\s+/g, '');
+                
+                // Construire le message WhatsApp
+                const whatsappMessage = `Bonjour ${schoolName},\n\n` +
+                    `✅ Votre demande d'inscription à SpeakFree a été approuvée !\n\n` +
+                    `📋 Vos informations de connexion:\n` +
+                    `🔐 Code École: ${data.schoolCode}\n` +
+                    `🔑 Mot de passe: ${finalPassword}\n\n` +
+                    `🌐 Accédez à la plateforme: http://localhost:3000/login\n\n` +
+                    `Bienvenue sur SpeakFree! 🎉`;
+                
+                // Lien WhatsApp (extraire les chiffres)
+                const whatsappLink = `https://wa.me/${cleanPhone.replace(/\D/g, '')}?text=${encodeURIComponent(whatsappMessage)}`;
+                
+                alert(`✅ École approuvée!\n\nInformations de connexion:\n- Code: ${data.schoolCode}\n- Mot de passe: ${finalPassword}\n\nUn message WhatsApp va être envoyé.`);
+                
+                // Ouvrir WhatsApp
+                window.open(whatsappLink, '_blank');
+                
+                // Recharger les écoles
+                setTimeout(() => {
+                    loadPendingSchools();
+                    loadActiveSchools();
+                    loadStatistics();
+                }, 500);
             })
             .catch(err => {
-                console.error('Erreur:', err);
-                alert('❌ Erreur lors de l\'approbation');
+                console.error('[APPROVE] Erreur complète:', err);
+                alert('❌ Erreur lors de l\'approbation: ' + err.message);
             });
         }
 
         function rejectSchool(schoolId, schoolCode) {
+            console.log(`[REJECT] Rejet école ${schoolId}`);
             const reason = prompt('Raison du rejet:', '');
             
             if (reason === null) return; // Annulation
             
-            fetch(`/api/super-admin/schools/${schoolId}/reject`, {
+            const endpoint = `/api/super-admin/schools/${schoolId}/reject`;
+            console.log(`[REJECT] Endpoint: ${endpoint}`);
+            
+            apiCall(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     code: '200700',
                     reason: reason || 'Non spécifiée'
                 })
             })
-            .then(res => res.json())
             .then(data => {
+                console.log('[REJECT] Réponse:', data);
+                
                 if (data.error) {
                     alert('❌ Erreur: ' + data.error);
                 } else {
@@ -750,8 +765,8 @@
                 }
             })
             .catch(err => {
-                console.error('Erreur:', err);
-                alert('❌ Erreur lors du rejet');
+                console.error('[REJECT] Erreur complète:', err);
+                alert('❌ Erreur lors du rejet: ' + err.message);
             });
         }
 
@@ -800,5 +815,7 @@
             }
         }
     </script>
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
 </body>
 </html>
