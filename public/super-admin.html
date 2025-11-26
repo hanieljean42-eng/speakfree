@@ -462,21 +462,25 @@
         </div>
     </div>
 
+    <!-- Configuration API - DOIT ÊTRE CHARGÉ EN PREMIER -->
+    <script src="/config.js"></script>
+    
     <script>
         const SUPER_ADMIN_CODE = '200700';
 
         // Charger les statistiques
         function loadStatistics() {
-            fetch('/api/super-admin/stats')
-                .then(response => response.json())
+            console.log('[STATS] Chargement des statistiques...');
+            apiCall(CONFIG.ENDPOINTS.superAdmin.stats)
                 .then(data => {
+                    console.log('[STATS] Réponse:', data);
                     document.getElementById('activeSchools').textContent = data.activeSchools || 0;
                     document.getElementById('pendingSchools').textContent = data.pendingSchools || 0;
                     document.getElementById('totalReports').textContent = data.totalReports || 0;
                     document.getElementById('totalAdmins').textContent = data.totalAdmins || 0;
                 })
                 .catch(error => {
-                    console.error('Erreur lors du chargement des stats:', error);
+                    console.error('[STATS] Erreur:', error);
                     // Garder les valeurs par défaut (0)
                 });
         }
@@ -775,26 +779,30 @@
         }
 
         function viewSchoolDetails(schoolId) {
-            fetch(`/api/super-admin/schools/${schoolId}/details`)
-                .then(res => res.json())
+            console.log(`[DETAILS] Chargement détails école ${schoolId}`);
+            apiCall(`/api/super-admin/schools/${schoolId}/details`)
                 .then(data => {
+                    console.log('[DETAILS] Réponse:', data);
                     alert(`📊 Détails de ${data.school.name}\n\n` +
                         `📍 Ville: ${data.school.city}\n` +
                         `👥 Administrateurs: ${data.admins.length}\n` +
                         `📢 Signalements: ${data.recentReports.length} récents`);
                 })
-                .catch(err => console.error('Erreur:', err));
+                .catch(err => {
+                    console.error('[DETAILS] Erreur:', err);
+                    alert('❌ Erreur: ' + err.message);
+                });
         }
 
         function deleteSchool(schoolId) {
             if (confirm('⚠️ ATTENTION ! Supprimer cette école supprimera TOUS ses signalements et données. Continuer ?')) {
-                fetch(`/api/super-admin/schools/${schoolId}`, {
+                console.log(`[DELETE] Suppression école ${schoolId}`);
+                apiCall(`/api/super-admin/schools/${schoolId}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ code: '200700' })
                 })
-                .then(res => res.json())
                 .then(data => {
+                    console.log('[DELETE] Réponse:', data);
                     if (data.error) {
                         alert('❌ Erreur: ' + data.error);
                     } else {
@@ -803,7 +811,10 @@
                         loadStatistics();
                     }
                 })
-                .catch(err => console.error('Erreur:', err));
+                .catch(err => {
+                    console.error('[DELETE] Erreur:', err);
+                    alert('❌ Erreur lors de la suppression: ' + err.message);
+                });
             }
         }
 
@@ -815,7 +826,5 @@
             }
         }
     </script>
-    <!-- Configuration API -->
-    <script src="/config.js"></script>
 </body>
 </html>
