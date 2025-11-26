@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 SpeakFree - Connexion</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-container h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+        .login-container p {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .error { color: #dc3545; margin-top: 10px; text-align: center; }
+        .success { color: #28a745; margin-top: 10px; text-align: center; }
+        .links {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        .links a:hover { text-decoration: underline; }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>💬 SpeakFree</h1>
+        <p>Connexion Administrateur</p>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">📧 Email</label>
+                <input type="email" id="email" placeholder="admin@ecole.ci" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">🔒 Mot de passe</label>
+                <input type="password" id="password" placeholder="Votre mot de passe" required>
+            </div>
+
+            <button type="submit">🔓 Se Connecter</button>
+
+            <div id="message"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Connexion en cours...</p>
+            </div>
+        </form>
+
+        <div class="links">
+            <a href="/">🏠 Accueil</a>
+            <a href="/register-school.html">📝 Inscription École</a>
+            <a href="/chat-ia.html">🤖 Chat IA</a>
+        </div>
+    </div>
+
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+
+    <script>
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            const loadingDiv = document.getElementById('loading');
+            const form = document.getElementById('loginForm');
+
+            messageDiv.innerHTML = '';
+            form.style.display = 'none';
+            loadingDiv.style.display = 'block';
+
+            try {
+                console.log('[LOGIN] Tentative connexion:', email);
+                const result = await apiLogin(email, password);
+
+                if (result.token) {
+                    localStorage.setItem('speakfree_token', result.token);
+                    localStorage.setItem('speakfree_admin', JSON.stringify({
+                        firstName: result.firstName,
+                        lastName: result.lastName,
+                        schoolName: result.schoolName,
+                        schoolId: result.schoolId
+                    }));
+
+                    messageDiv.innerHTML = '<div class="success">✅ Connexion réussie! Redirection...</div>';
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 1500);
+                } else {
+                    throw new Error('Token non reçu');
+                }
+            } catch (error) {
+                console.error('[LOGIN] Erreur:', error.message);
+                messageDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+                form.style.display = 'block';
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Redirection si déjà connecté
+        if (localStorage.getItem('speakfree_token')) {
+            window.location.href = '/dashboard.html';
+        }
+    </script>
+</body>
+</html>
