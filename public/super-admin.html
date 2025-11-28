@@ -539,22 +539,16 @@
             return cleaned;
         }
 
-        // Ouvrir WhatsApp avec le message des identifiants
-        function sendWhatsAppMessage(phone, schoolName, schoolCode, password, email) {
-            console.log('[WHATSAPP] Préparation du message...');
-            console.log('[WHATSAPP] Téléphone original:', phone);
+        // Afficher le modal WhatsApp avec le lien
+        function showWhatsAppModal(phone, schoolName, schoolCode, password, email) {
+            console.log('[WHATSAPP] Affichage modal...');
             
             if (!phone) {
-                alert('⚠️ Numéro de téléphone non disponible. Envoi WhatsApp impossible.');
+                alert('⚠️ Numéro de téléphone non disponible.');
                 return;
             }
             
             const formattedPhone = formatPhoneForWhatsApp(phone);
-            
-            if (!formattedPhone) {
-                alert('⚠️ Format de numéro invalide. Envoi WhatsApp impossible.');
-                return;
-            }
             
             const message = `🎉 *Bienvenue sur SpeakFree !*
 
@@ -573,38 +567,94 @@ ${window.location.origin}/login
 ⚠️ *Important :*
 - Gardez ces informations confidentielles
 - Changez votre mot de passe dès la première connexion
-- Contactez-nous en cas de problème
 
-Merci de faire confiance à SpeakFree ! 🙏
-L'équipe SpeakFree`;
+Merci de faire confiance à SpeakFree ! 🙏`;
 
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
             
-            console.log('[WHATSAPP] URL générée:', whatsappUrl);
+            // Créer le modal
+            const modalHtml = `
+                <div id="whatsappModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                ">
+                    <div style="
+                        background: white;
+                        padding: 30px;
+                        border-radius: 20px;
+                        max-width: 500px;
+                        width: 90%;
+                        text-align: center;
+                        color: #333;
+                    ">
+                        <h2 style="color: #25D366; margin-bottom: 20px;">📱 Envoyer par WhatsApp</h2>
+                        
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left;">
+                            <p><strong>🏫 École:</strong> ${schoolName}</p>
+                            <p><strong>📞 Téléphone:</strong> ${phone}</p>
+                            <p><strong>🔑 Mot de passe:</strong> ${password}</p>
+                        </div>
+                        
+                        <a href="${whatsappUrl}" target="_blank" style="
+                            display: inline-block;
+                            background: #25D366;
+                            color: white;
+                            padding: 15px 40px;
+                            border-radius: 30px;
+                            text-decoration: none;
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin-bottom: 15px;
+                        ">
+                            📲 OUVRIR WHATSAPP
+                        </a>
+                        
+                        <br><br>
+                        
+                        <button onclick="document.getElementById('whatsappModal').remove()" style="
+                            background: #666;
+                            color: white;
+                            border: none;
+                            padding: 10px 30px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            font-size: 14px;
+                        ">
+                            ✖ Fermer
+                        </button>
+                        
+                        <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                            Si WhatsApp ne s'ouvre pas, copiez ce lien :<br>
+                            <input type="text" value="${whatsappUrl}" readonly style="
+                                width: 100%;
+                                padding: 8px;
+                                margin-top: 5px;
+                                border: 1px solid #ddd;
+                                border-radius: 5px;
+                                font-size: 11px;
+                            " onclick="this.select(); document.execCommand('copy'); alert('Lien copié!');">
+                        </p>
+                    </div>
+                </div>
+            `;
             
-            // Demander confirmation avant d'ouvrir WhatsApp
-            const confirmSend = confirm(
-                '📱 Ouvrir WhatsApp pour envoyer les identifiants ?\n\n' +
-                '📞 Numéro: ' + phone + '\n' +
-                '🏫 École: ' + schoolName
-            );
+            // Supprimer l'ancien modal s'il existe
+            const oldModal = document.getElementById('whatsappModal');
+            if (oldModal) oldModal.remove();
             
-            if (confirmSend) {
-                // Créer un lien temporaire et cliquer dessus (évite les blocages de popup)
-                const link = document.createElement('a');
-                link.href = whatsappUrl;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                console.log('[WHATSAPP] Lien cliqué');
-            } else {
-                // Afficher le message pour copie manuelle
-                alert('📋 Message à envoyer manuellement :\n\n' + message);
-            }
+            // Ajouter le nouveau modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            console.log('[WHATSAPP] Modal affiché avec lien:', whatsappUrl);
         }
 
         // Gérer l'approbation d'une école
@@ -644,19 +694,8 @@ L'équipe SpeakFree`;
                 if (data.error) {
                     alert('❌ Erreur: ' + data.error);
                 } else {
-                    // Afficher la confirmation
-                    alert('✅ École approuvée avec succès!\n\n' +
-                          '📋 Informations:\n' +
-                          '━━━━━━━━━━━━━━━━\n' +
-                          '🏫 École: ' + school.name + '\n' +
-                          '🔑 Code: ' + data.schoolCode + '\n' +
-                          '📧 Email: ' + school.email + '\n' +
-                          '🔐 Mot de passe: ' + password + '\n' +
-                          '━━━━━━━━━━━━━━━━\n\n' +
-                          '📱 WhatsApp va s\'ouvrir pour envoyer les identifiants...');
-                    
-                    // Envoyer par WhatsApp
-                    sendWhatsAppMessage(
+                    // Afficher le modal WhatsApp
+                    showWhatsAppModal(
                         school.phone,
                         school.name,
                         data.schoolCode,
