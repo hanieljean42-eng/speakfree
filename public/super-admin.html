@@ -405,7 +405,7 @@
                     <h1>⚙️ Super Admin Panel</h1>
                     <p style="opacity: 0.9;">Gestion globale de la plateforme SpeakFree</p>
                 </div>
-                <button class="logout-btn" onclick="logout()">
+                <button class="logout-btn" id="logoutBtn" type="button">
                     🚪 Déconnexion
                 </button>
             </div>
@@ -1030,6 +1030,28 @@ Merci de faire confiance à SpeakFree ! 🙏`;
                 });
             }
         }
+
+        // ATTACHER LE BOUTON DÉCONNEXION AU CHARGEMENT
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[INIT] Page chargée, attachement bouton logout...');
+            
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('[LOGOUT] Clic détecté!');
+                    if (confirm('Se déconnecter du panel super admin ?')) {
+                        document.getElementById('dashboard').classList.remove('active');
+                        document.getElementById('loginScreen').style.display = 'flex';
+                        document.getElementById('adminCode').value = '';
+                        console.log('[LOGOUT] Déconnexion OK');
+                    }
+                });
+                console.log('[INIT] Bouton logout attaché');
+            } else {
+                console.error('[INIT] Bouton logout NON TROUVÉ!');
+            }
+        });
     </script>
 </body>
 </html>
