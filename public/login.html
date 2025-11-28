@@ -357,6 +357,9 @@
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         let passwordVisible = false;
 
@@ -377,59 +380,46 @@
             loginBtn.textContent = '⏳ Connexion...';
 
             // Appel API
-            fetch('/api/auth/login', {
+            apiCall(CONFIG.ENDPOINTS.auth.login, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     identifier: identifier,
                     password: password
                 })
             })
-            .then(res => res.json())
             .then(data => {
-                if (data.error) {
-                    // Échec de connexion
-                    errorAlert.classList.add('active');
-                    document.getElementById('errorMessage').textContent = data.error;
-                    
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = '🚀 Se Connecter';
+                // Connexion réussie
+                loginBtn.textContent = '✅ Connexion réussie !';
+                loginBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
 
-                    // Secouer le formulaire
-                    document.querySelector('.login-container').style.animation = 'shake 0.5s';
-                    setTimeout(() => {
-                        document.querySelector('.login-container').style.animation = '';
-                    }, 500);
-                } else {
-                    // Connexion réussie
-                    loginBtn.textContent = '✅ Connexion réussie !';
-                    loginBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                // Sauvegarder le token
+                localStorage.setItem('speakfree_token', data.token);
+                localStorage.setItem('speakfree_admin', JSON.stringify(data.admin));
 
-                    // Sauvegarder le token
-                    localStorage.setItem('speakfree_token', data.token);
-                    localStorage.setItem('speakfree_admin', JSON.stringify(data.admin));
-
-                    // Sauvegarder la session si "Se souvenir"
-                    if (document.getElementById('rememberMe').checked) {
-                        localStorage.setItem('speakfree_remember', 'true');
-                        localStorage.setItem('speakfree_email', identifier);
-                    }
-
-                    // Rediriger vers le dashboard
-                    setTimeout(() => {
-                        window.location.href = '/admin';
-                    }, 1000);
+                // Sauvegarder la session si "Se souvenir"
+                if (document.getElementById('rememberMe').checked) {
+                    localStorage.setItem('speakfree_remember', 'true');
+                    localStorage.setItem('speakfree_email', identifier);
                 }
+
+                // Rediriger vers le dashboard
+                setTimeout(() => {
+                    window.location.href = '/admin';
+                }, 1000);
             })
             .catch(error => {
                 console.error('Erreur:', error);
                 errorAlert.classList.add('active');
-                document.getElementById('errorMessage').textContent = 'Erreur de connexion. Veuillez réessayer.';
+                document.getElementById('errorMessage').textContent = error.message || 'Erreur de connexion. Veuillez réessayer.';
                 
                 loginBtn.disabled = false;
                 loginBtn.textContent = '🚀 Se Connecter';
+                
+                // Secouer le formulaire
+                document.querySelector('.login-container').style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    document.querySelector('.login-container').style.animation = '';
+                }, 500);
             });
         });
 

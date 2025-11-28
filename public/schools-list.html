@@ -313,6 +313,9 @@
         <p>Développé par <strong>Haniel DJEBLE</strong> © 2025</p>
     </footer>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         let allSchools = [];
         let currentFilter = 'all';
@@ -323,8 +326,7 @@
 
         async function loadSchools() {
             try {
-                const response = await fetch('/api/schools');
-                const data = await response.json();
+                const data = await apiCall(CONFIG.ENDPOINTS.schools.list);
 
                 allSchools = data.schools || [];
 

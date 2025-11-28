@@ -830,6 +830,9 @@
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
 // Vérifier l'authentification
 const token = localStorage.getItem('speakfree_token');
@@ -843,7 +846,7 @@ if (!token) {
 document.getElementById('schoolName').textContent = admin.schoolName || 'École';
 document.getElementById('adminName').textContent = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'Administrateur';
 
-// Headers pour les requêtes API
+// Headers pour les requêtes API (note: apiCall gère automatiquement le token)
 const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -855,20 +858,17 @@ loadRecentReports();
 
 // STATISTIQUES
 function loadDashboardStats() {
-    fetch('/api/admin/dashboard', { headers })
-        .then(res => res.json())
+    apiCall(CONFIG.ENDPOINTS.admin.dashboard)
         .then(data => {
-            if (data.error) {
-                console.error('Erreur:', data.error);
-                if (data.error.includes('Token')) logout();
-                return;
-            }
             document.getElementById('statTotal').textContent = data.total || 0;
             document.getElementById('statPending').textContent = data.pending || 0;
             document.getElementById('statInProgress').textContent = data.inProgress || 0;
             document.getElementById('statResolved').textContent = data.resolved || 0;
         })
-        .catch(err => console.error('Erreur:', err));
+        .catch(err => {
+            console.error('Erreur dashboard:', err);
+            if (err.message && err.message.includes('Token')) logout();
+        });
 }
 
 // SIGNALEMENTS RÉCENTS
@@ -876,10 +876,9 @@ function loadRecentReports() {
     const container = document.getElementById('recentReportsList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
 
-    fetch('/api/admin/reports?limit=5', { headers })
-        .then(res => res.json())
+    apiCall(CONFIG.ENDPOINTS.admin.reports + '?limit=5')
         .then(data => {
-            if (data.error || !data.reports || data.reports.length === 0) {
+            if (!data.reports || data.reports.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
                 return;
             }
@@ -928,13 +927,12 @@ function loadAllReports() {
     const statusFilter = document.getElementById('statusFilter').value;
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
 
-    let url = '/api/admin/reports?limit=100';
+    let url = CONFIG.ENDPOINTS.admin.reports + '?limit=100';
     if (statusFilter) url += `&status=${statusFilter}`;
 
-    fetch(url, { headers })
-        .then(res => res.json())
+    apiCall(url)
         .then(data => {
-            if (data.error || !data.reports || data.reports.length === 0) {
+            if (!data.reports || data.reports.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
                 return;
             }
@@ -953,14 +951,8 @@ function viewReportDetails(reportId) {
     modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
     modal.classList.add('active');
 
-    fetch(`/api/admin/reports/${reportId}`, { headers })
-        .then(res => res.json())
+    apiCall(`/api/admin/reports/${reportId}`)
         .then(data => {
-            if (data.error) {
-                modalBody.innerHTML = `<p style="color: red;">Erreur: ${data.error}</p>`;
-                return;
-            }
-
             const report = data.report;
             const files = data.files || [];
             const messages = data.messages || [];
@@ -1009,56 +1001,52 @@ function viewReportDetails(reportId) {
 
 // METTRE À JOUR STATUT
 function updateReportStatus(reportId, newStatus) {
-    fetch(`/api/admin/reports/${reportId}/status`, {
+    apiCall(`/api/admin/reports/${reportId}/status`, {
         method: 'PATCH',
-        headers,
         body: JSON.stringify({ status: newStatus })
     })
-    .then(res => res.json())
     .then(data => {
-        if (data.error) alert('❌ ' + data.error);
-        else { alert('✅ Statut mis à jour'); refreshData(); }
+        alert('✅ Statut mis à jour');
+        refreshData();
     })
-    .catch(err => alert('❌ Erreur'));
+    .catch(err => alert('❌ Erreur: ' + err.message));
 }
 
 // RÉPONDRE
 function sendReply(event, reportId) {
     event.preventDefault();
     const message = document.getElementById('replyMessage').value;
-    fetch(`/api/admin/reports/${reportId}/reply`, {
+    apiCall(`/api/admin/reports/${reportId}/reply`, {
         method: 'POST',
-        headers,
         body: JSON.stringify({ message })
     })
-    .then(res => res.json())
     .then(data => {
-        if (data.error) alert('❌ ' + data.error);
-        else { alert('✅ Envoyé'); document.getElementById('replyMessage').value = ''; viewReportDetails(reportId); }
+        alert('✅ Envoyé');
+        document.getElementById('replyMessage').value = '';
+        viewReportDetails(reportId);
     })
-    .catch(err => alert('❌ Erreur'));
+    .catch(err => alert('❌ Erreur: ' + err.message));
 }
 
 // SUPPRIMER
 function deleteReport(reportId) {
     if (!confirm('⚠️ Supprimer ce signalement ?')) return;
-    fetch(`/api/admin/reports/${reportId}`, { method: 'DELETE', headers })
-        .then(res => res.json())
+    apiCall(`/api/admin/reports/${reportId}`, { method: 'DELETE' })
         .then(data => {
-            if (data.error) alert('❌ ' + data.error);
-            else { alert('✅ Supprimé'); closeModal('reportModal'); refreshData(); }
+            alert('✅ Supprimé');
+            closeModal('reportModal');
+            refreshData();
         })
-        .catch(err => alert('❌ Erreur'));
+        .catch(err => alert('❌ Erreur: ' + err.message));
 }
 
 // DISCUSSIONS
 function loadDiscussions() {
     const container = document.getElementById('discussionsList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
-    fetch('/api/admin/discussions', { headers })
-        .then(res => res.json())
+    apiCall('/api/admin/discussions')
         .then(data => {
-            if (data.error || !data.discussions || data.discussions.length === 0) {
+            if (!data.discussions || data.discussions.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><h3>Aucune discussion</h3></div>';
                 return;
             }
@@ -1086,13 +1074,8 @@ function loadStatistics() {
     const container = document.getElementById('statisticsContent');
     const period = document.getElementById('periodFilter').value;
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
-    fetch(`/api/admin/statistics?period=${period}`, { headers })
-        .then(res => res.json())
+    apiCall(`/api/admin/statistics?period=${period}`)
         .then(data => {
-            if (data.error) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
-                return;
-            }
             let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
             if (data.byType && data.byType.length > 0) {
                 html += `<div class="chart-container"><h3>📊 Par Type</h3>${data.byType.map(i => `<div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>${i.incident_type}</span><strong>${i.count}</strong></div><div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;"><div style="background: #667eea; height: 100%; width: ${(i.count / data.byType.reduce((a,b) => a + b.count, 0) * 100)}%;"></div></div></div>`).join('')}</div>`;
@@ -1113,10 +1096,9 @@ function loadStatistics() {
 function loadTeam() {
     const container = document.getElementById('teamList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
-    fetch('/api/admin/team', { headers })
-        .then(res => res.json())
+    apiCall('/api/admin/team')
         .then(data => {
-            if (data.error || !data.team || data.team.length === 0) {
+            if (!data.team || data.team.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>Aucun membre</h3></div>';
                 return;
             }
@@ -1130,15 +1112,12 @@ function loadTeam() {
 
 // PARAMÈTRES
 function loadSettings() {
-    fetch(`/api/schools/${admin.schoolCode}`, { headers })
-        .then(res => res.json())
+    apiCall(`/api/schools/${admin.schoolCode}`)
         .then(data => {
-            if (!data.error) {
-                document.getElementById('settingsSchoolCode').textContent = data.school_code;
-                document.getElementById('settingsSchoolName').textContent = data.name;
-                document.getElementById('settingsCity').textContent = data.city;
-                document.getElementById('settingsStatus').textContent = data.status === 'active' ? 'Active' : 'Inactive';
-            }
+            document.getElementById('settingsSchoolCode').textContent = data.school_code;
+            document.getElementById('settingsSchoolName').textContent = data.name;
+            document.getElementById('settingsCity').textContent = data.city;
+            document.getElementById('settingsStatus').textContent = data.status === 'active' ? 'Active' : 'Inactive';
         })
         .catch(err => console.error('Erreur:', err));
 }
@@ -1150,17 +1129,15 @@ function changePassword(event) {
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     if (newPassword !== confirmPassword) { alert('❌ Mots de passe différents'); return; }
-    fetch('/api/auth/change-password', {
+    apiCall('/api/auth/change-password', {
         method: 'POST',
-        headers,
         body: JSON.stringify({ currentPassword, newPassword })
     })
-    .then(res => res.json())
     .then(data => {
-        if (data.error) alert('❌ ' + data.error);
-        else { alert('✅ Mot de passe changé'); document.getElementById('changePasswordForm').reset(); }
+        alert('✅ Mot de passe changé');
+        document.getElementById('changePasswordForm').reset();
     })
-    .catch(err => alert('❌ Erreur'));
+    .catch(err => alert('❌ Erreur: ' + err.message));
 }
 
 // NAVIGATION

@@ -460,6 +460,9 @@
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         let discussionData = null;
 
@@ -474,21 +477,14 @@
             loginBtn.textContent = '⏳ Connexion...';
 
             // Appel API pour vérifier le code
-            fetch(`/api/discussions/${code}`)
-                .then(res => res.json())
+            apiCall(`/api/discussions/${code}`)
                 .then(data => {
-                    if (data.error) {
-                        alert('❌ Code invalide. Vérifie ton code d\'accès.');
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = '🚀 Accéder à la Discussion';
-                    } else {
-                        // Charger la discussion
-                        loadDiscussion(data);
-                    }
+                    // Charger la discussion
+                    loadDiscussion(data);
                 })
                 .catch(error => {
                     console.error('Erreur:', error);
-                    alert('❌ Erreur de connexion. Vérifie ton code.');
+                    alert('❌ Code invalide ou erreur. Vérifie ton code d\'accès.');
                     loginBtn.disabled = false;
                     loginBtn.textContent = '🚀 Accéder à la Discussion';
                 });
@@ -526,25 +522,17 @@
             document.getElementById('sendBtn').disabled = true;
 
             // Envoyer au backend
-            fetch(`/api/discussions/${discussionData.report.discussionCode}/message`, {
+            apiCall(`/api/discussions/${discussionData.report.discussionCode}/message`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     message: message,
                     senderType: 'student'
                 })
             })
-            .then(res => res.json())
             .then(data => {
-                if (data.error) {
-                    alert('❌ Erreur: ' + data.error);
-                } else {
-                    // Ajouter le message à l'interface
-                    addMessage('student', message, 'À l\'instant');
-                    input.value = '';
-                }
+                // Ajouter le message à l'interface
+                addMessage('student', message, 'À l\'instant');
+                input.value = '';
                 
                 // Réactiver
                 input.disabled = false;
@@ -553,7 +541,7 @@
             })
             .catch(error => {
                 console.error('Erreur:', error);
-                alert('❌ Erreur d\'envoi. Réessaye.');
+                alert('❌ Erreur d\'envoi: ' + (error.message || 'Réessaye.'));
                 input.disabled = false;
                 document.getElementById('sendBtn').disabled = false;
             });

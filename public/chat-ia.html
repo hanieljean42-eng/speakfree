@@ -362,22 +362,21 @@
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         let conversationHistory = [];
         let sessionId = null;
         let sessionCode = null;
 
         // Créer une nouvelle session au chargement
-        fetch('/api/ai-chat/create-session', {
+        apiCall(CONFIG.ENDPOINTS.aiChat.createSession, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 schoolCode: localStorage.getItem('selectedSchoolCode') || null
             })
         })
-        .then(res => res.json())
         .then(data => {
             if (data.sessionCode) {
                 sessionCode = data.sessionCode;
@@ -394,8 +393,7 @@
         .catch(err => console.error('Erreur création session:', err));
 
         function loadSessionMessages() {
-            fetch(`/api/ai-chat/session/${sessionCode}`)
-                .then(res => res.json())
+            apiCall(`/api/ai-chat/session/${sessionCode}`)
                 .then(data => {
                     if (data.messages) {
                         data.messages.forEach(msg => {
@@ -427,18 +425,13 @@
 
             try {
                 // Appel API backend
-                const response = await fetch('/api/ai-chat/message', {
+                const data = await apiCall(CONFIG.ENDPOINTS.aiChat.sendMessage, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({
                         sessionCode: sessionCode,
                         message: message
                     })
                 });
-
-                const data = await response.json();
                 
                 hideTypingIndicator();
 

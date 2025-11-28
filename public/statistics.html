@@ -382,6 +382,9 @@
         <p>Développé par <strong>Haniel DJEBLE</strong> © 2025</p>
     </footer>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         let allData = {};
 
@@ -394,18 +397,15 @@
         async function loadAllStatistics() {
             try {
                 // Charger les statistiques globales
-                const statsRes = await fetch('/api/schools/stats/global');
-                const stats = await statsRes.json();
+                const stats = await apiCall(CONFIG.ENDPOINTS.schools.stats);
                 allData.stats = stats;
 
                 // Charger les écoles
-                const schoolsRes = await fetch('/api/schools');
-                const schoolsData = await schoolsRes.json();
+                const schoolsData = await apiCall(CONFIG.ENDPOINTS.schools.list);
                 allData.schools = schoolsData.schools || [];
 
                 // Charger les signalements (via super-admin stats)
-                const superAdminStatsRes = await fetch('/api/super-admin/stats');
-                const superAdminStats = await superAdminStatsRes.json();
+                const superAdminStats = await apiCall(CONFIG.ENDPOINTS.superAdmin.stats);
                 allData.superAdminStats = superAdminStats;
 
                 // Mettre à jour l'affichage

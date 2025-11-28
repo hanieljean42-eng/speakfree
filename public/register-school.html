@@ -505,6 +505,9 @@
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -542,28 +545,18 @@
             };
 
             // Envoyer au backend
-            fetch('/api/schools/register', {
+            apiCall(CONFIG.ENDPOINTS.schools.register, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify(formData)
             })
-            .then(res => res.json())
             .then(data => {
-                if (data.error) {
-                    alert('❌ Erreur: ' + data.error);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '📤 Envoyer la Demande';
-                } else {
-                    document.getElementById('confirmPhone').textContent = formData.phone;
-                    document.getElementById('confirmEmail').textContent = formData.email;
-                    document.getElementById('successModal').classList.add('active');
-                }
+                document.getElementById('confirmPhone').textContent = formData.phone;
+                document.getElementById('confirmEmail').textContent = formData.email;
+                document.getElementById('successModal').classList.add('active');
             })
             .catch(error => {
                 console.error('Erreur:', error);
-                alert('❌ Erreur de connexion. Veuillez réessayer.');
+                alert('❌ Erreur: ' + (error.message || 'Erreur de connexion. Veuillez réessayer.'));
                 submitBtn.disabled = false;
                 submitBtn.textContent = '📤 Envoyer la Demande';
             });
