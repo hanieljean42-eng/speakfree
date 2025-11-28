@@ -140,11 +140,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Rate limiting global
+// Rate limiting global - Limite augmentée pour le développement
 const limiter = rateLimit({
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-    message: 'Trop de requêtes, veuillez réessayer plus tard.'
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, // 1000 requêtes par minute (très permissif pour dev)
+    message: { error: 'Trop de requêtes, veuillez réessayer dans quelques secondes.' },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 app.use(limiter);
 
