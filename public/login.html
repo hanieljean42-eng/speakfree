@@ -357,15 +357,23 @@
         </div>
     </div>
 
-    <!-- Configuration API -->
+    <!-- Configuration API - DOIT ÊTRE CHARGÉ EN PREMIER -->
     <script src="/config.js"></script>
     
     <script>
+        // Attendre que config.js soit chargé
+        if (typeof CONFIG === 'undefined' || typeof apiCall === 'undefined') {
+            console.error('ERREUR: config.js non chargé!');
+        } else {
+            console.log('[LOGIN] Config.js chargé, API_URL:', CONFIG.API_URL);
+        }
+        
         let passwordVisible = false;
 
         // Gestion de la soumission du formulaire
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            console.log('[LOGIN] Soumission du formulaire...');
 
             const identifier = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
@@ -379,15 +387,31 @@
             loginBtn.disabled = true;
             loginBtn.textContent = '⏳ Connexion...';
 
-            // Appel API
-            apiCall(CONFIG.ENDPOINTS.auth.login, {
+            console.log('[LOGIN] Envoi vers:', CONFIG.API_URL + CONFIG.ENDPOINTS.auth.login);
+            console.log('[LOGIN] Identifier:', identifier);
+
+            // Appel API avec fetch direct pour debug
+            fetch(CONFIG.API_URL + CONFIG.ENDPOINTS.auth.login, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     identifier: identifier,
                     password: password
                 })
             })
+            .then(response => {
+                console.log('[LOGIN] Réponse status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('[LOGIN] Réponse data:', data);
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
                 // Connexion réussie
                 loginBtn.textContent = '✅ Connexion réussie !';
                 loginBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
@@ -402,13 +426,14 @@
                     localStorage.setItem('speakfree_email', identifier);
                 }
 
+                console.log('[LOGIN] Redirection vers /admin...');
                 // Rediriger vers le dashboard
                 setTimeout(() => {
                     window.location.href = '/admin';
                 }, 1000);
             })
             .catch(error => {
-                console.error('Erreur:', error);
+                console.error('[LOGIN] Erreur:', error);
                 errorAlert.classList.add('active');
                 document.getElementById('errorMessage').textContent = error.message || 'Erreur de connexion. Veuillez réessayer.';
                 
@@ -425,6 +450,7 @@
 
         // Toggle affichage mot de passe
         function togglePassword() {
+            console.log('[LOGIN] Toggle password');
             const passwordInput = document.getElementById('password');
             const toggleIcon = document.querySelector('.password-toggle');
             
@@ -441,10 +467,11 @@
 
         // Mot de passe oublié
         function forgotPassword() {
+            console.log('[LOGIN] Forgot password clicked');
             const email = document.getElementById('email').value.trim();
             
             if (email) {
-                alert(`📧 Un lien de réinitialisation sera envoyé à ${email}`);
+                alert('📧 Fonctionnalité en cours de développement.\n\nContactez votre super administrateur pour réinitialiser votre mot de passe.');
             } else {
                 alert('📧 Entrez votre email puis cliquez sur "Mot de passe oublié"');
                 document.getElementById('email').focus();
@@ -455,6 +482,7 @@
 
         // Charger l'email sauvegardé
         window.addEventListener('load', function() {
+            console.log('[LOGIN] Page chargée');
             if (localStorage.getItem('speakfree_remember') === 'true') {
                 const savedEmail = localStorage.getItem('speakfree_email');
                 if (savedEmail) {
@@ -474,6 +502,8 @@
             }
         `;
         document.head.appendChild(style);
+        
+        console.log('[LOGIN] Script initialisé');
     </script>
 </body>
 </html>
