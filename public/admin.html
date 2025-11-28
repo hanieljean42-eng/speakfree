@@ -589,37 +589,37 @@
             <p>Dashboard Admin</p>
         </div>
 
-        <div class="menu-item active" onclick="showSection('dashboard')">
+        <div class="menu-item active" data-section="dashboard">
             <span class="icon">📊</span>
             <span>Tableau de bord</span>
         </div>
 
-        <div class="menu-item" onclick="showSection('reports')">
+        <div class="menu-item" data-section="reports">
             <span class="icon">📢</span>
             <span>Signalements</span>
         </div>
 
-        <div class="menu-item" onclick="showSection('discussions')">
+        <div class="menu-item" data-section="discussions">
             <span class="icon">💬</span>
             <span>Discussions</span>
         </div>
 
-        <div class="menu-item" onclick="showSection('statistics')">
+        <div class="menu-item" data-section="statistics">
             <span class="icon">📈</span>
             <span>Statistiques</span>
         </div>
 
-        <div class="menu-item" onclick="showSection('team')">
+        <div class="menu-item" data-section="team">
             <span class="icon">👥</span>
             <span>Équipe</span>
         </div>
 
-        <div class="menu-item" onclick="showSection('settings')">
+        <div class="menu-item" data-section="settings">
             <span class="icon">⚙️</span>
             <span>Paramètres</span>
         </div>
 
-        <button class="logout-btn" onclick="logout()">
+        <button class="logout-btn" id="logoutBtn">
             🚪 <span>Déconnexion</span>
         </button>
     </div>
@@ -674,8 +674,8 @@
                 <div class="section-header">
                     <h2>📢 Signalements Récents</h2>
                     <div class="filter-controls">
-                        <button class="filter-btn" onclick="showSection('reports')">Voir tout</button>
-                        <button class="action-btn-primary" onclick="refreshData()">🔄 Actualiser</button>
+                        <button class="filter-btn" id="viewAllReportsBtn">Voir tout</button>
+                        <button class="action-btn-primary" id="refreshDashboardBtn">🔄 Actualiser</button>
                     </div>
                 </div>
 
@@ -694,13 +694,13 @@
                 <div class="section-header">
                     <h2>📢 Tous les Signalements</h2>
                     <div class="filter-controls">
-                        <select class="filter-btn" id="statusFilter" onchange="filterReports()">
+                        <select class="filter-btn" id="statusFilter">
                             <option value="">Tous les statuts</option>
                             <option value="pending">En attente</option>
                             <option value="in-progress">En cours</option>
                             <option value="resolved">Résolus</option>
                         </select>
-                        <button class="action-btn-primary" onclick="loadAllReports()">🔄 Actualiser</button>
+                        <button class="action-btn-primary" id="refreshReportsBtn">🔄 Actualiser</button>
                     </div>
                 </div>
 
@@ -718,7 +718,7 @@
             <div class="content-box">
                 <div class="section-header">
                     <h2>💬 Discussions Actives</h2>
-                    <button class="action-btn-primary" onclick="loadDiscussions()">🔄 Actualiser</button>
+                    <button class="action-btn-primary" id="refreshDiscussionsBtn">🔄 Actualiser</button>
                 </div>
 
                 <div id="discussionsList">
@@ -735,7 +735,7 @@
             <div class="content-box">
                 <div class="section-header">
                     <h2>📈 Statistiques Détaillées</h2>
-                    <select class="filter-btn" id="periodFilter" onchange="loadStatistics()">
+                    <select class="filter-btn" id="periodFilter">
                         <option value="7">7 derniers jours</option>
                         <option value="30" selected>30 derniers jours</option>
                         <option value="90">90 derniers jours</option>
@@ -757,7 +757,7 @@
             <div class="content-box">
                 <div class="section-header">
                     <h2>👥 Équipe Administrative</h2>
-                    <button class="action-btn-primary" onclick="loadTeam()">🔄 Actualiser</button>
+                    <button class="action-btn-primary" id="refreshTeamBtn">🔄 Actualiser</button>
                 </div>
 
                 <div id="teamList">
@@ -822,7 +822,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Détails du Signalement</h2>
-                <button class="close-modal" onclick="closeModal('reportModal')">&times;</button>
+                <button class="close-modal" id="closeReportModalBtn">&times;</button>
             </div>
             <div id="modalBody">
                 <!-- Contenu dynamique -->
@@ -830,324 +830,706 @@
         </div>
     </div>
 
-    <!-- Configuration API -->
+    <!-- Configuration API - DOIT ÊTRE CHARGÉ EN PREMIER -->
     <script src="/config.js"></script>
     
     <script>
-// Vérifier l'authentification
-const token = localStorage.getItem('speakfree_token');
-const admin = JSON.parse(localStorage.getItem('speakfree_admin') || '{}');
+// Variables globales
+let token = null;
+let admin = null;
 
-if (!token) {
-    window.location.href = '/login';
+// Attendre le chargement complet
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[ADMIN] Page chargée, initialisation...');
+    
+    // Vérifier que config.js est chargé
+    if (typeof CONFIG === 'undefined') {
+        console.error('[ADMIN] ERREUR: config.js non chargé!');
+        alert('Erreur de configuration. Rafraîchis la page.');
+        return;
+    }
+    
+    console.log('[ADMIN] CONFIG OK, API_URL:', CONFIG.API_URL);
+    
+    // Récupérer l'authentification
+    token = localStorage.getItem('speakfree_token');
+    try {
+        admin = JSON.parse(localStorage.getItem('speakfree_admin') || '{}');
+    } catch(e) {
+        admin = {};
+    }
+    
+    if (!token) {
+        console.log('[ADMIN] Pas de token, redirection...');
+        window.location.href = '/login.html';
+        return;
+    }
+    
+    console.log('[ADMIN] Token OK, admin:', admin);
+    
+    // Afficher les infos de l'admin
+    document.getElementById('schoolName').textContent = admin.schoolName || 'École';
+    document.getElementById('adminName').textContent = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'Administrateur';
+    
+    // Attacher tous les événements
+    attachEvents();
+    
+    // Charger les données initiales
+    loadDashboardStats();
+    loadRecentReports();
+});
+
+// Attacher les événements
+function attachEvents() {
+    console.log('[ADMIN] Attachement des événements...');
+    
+    // Menu items (sidebar)
+    document.querySelectorAll('.menu-item[data-section]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const section = this.getAttribute('data-section');
+            console.log('[ADMIN] Clic menu:', section);
+            showSection(section, this);
+        });
+    });
+    
+    // Bouton déconnexion
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Clic déconnexion');
+            logout();
+        });
+    }
+    
+    // Bouton voir tous les signalements
+    const viewAllBtn = document.getElementById('viewAllReportsBtn');
+    if (viewAllBtn) {
+        viewAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const menuItem = document.querySelector('.menu-item[data-section="reports"]');
+            showSection('reports', menuItem);
+        });
+    }
+    
+    // Bouton actualiser dashboard
+    const refreshDashBtn = document.getElementById('refreshDashboardBtn');
+    if (refreshDashBtn) {
+        refreshDashBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Actualiser dashboard');
+            refreshData();
+        });
+    }
+    
+    // Bouton actualiser signalements
+    const refreshReportsBtn = document.getElementById('refreshReportsBtn');
+    if (refreshReportsBtn) {
+        refreshReportsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Actualiser signalements');
+            loadAllReports();
+        });
+    }
+    
+    // Filtre statut
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            console.log('[ADMIN] Filtre statut:', this.value);
+            loadAllReports();
+        });
+    }
+    
+    // Bouton actualiser discussions
+    const refreshDiscBtn = document.getElementById('refreshDiscussionsBtn');
+    if (refreshDiscBtn) {
+        refreshDiscBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Actualiser discussions');
+            loadDiscussions();
+        });
+    }
+    
+    // Filtre période statistiques
+    const periodFilter = document.getElementById('periodFilter');
+    if (periodFilter) {
+        periodFilter.addEventListener('change', function() {
+            console.log('[ADMIN] Filtre période:', this.value);
+            loadStatistics();
+        });
+    }
+    
+    // Bouton actualiser équipe
+    const refreshTeamBtn = document.getElementById('refreshTeamBtn');
+    if (refreshTeamBtn) {
+        refreshTeamBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Actualiser équipe');
+            loadTeam();
+        });
+    }
+    
+    // Bouton fermer modal
+    const closeModalBtn = document.getElementById('closeReportModalBtn');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeModal('reportModal');
+        });
+    }
+    
+    // Fermer modal en cliquant dehors
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.remove('active');
+        }
+    });
+    
+    // Formulaire changement mot de passe
+    const pwdForm = document.getElementById('changePasswordForm');
+    if (pwdForm) {
+        pwdForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            changePassword();
+        });
+    }
+    
+    console.log('[ADMIN] Événements attachés');
 }
 
-// Afficher les infos de l'admin
-document.getElementById('schoolName').textContent = admin.schoolName || 'École';
-document.getElementById('adminName').textContent = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'Administrateur';
-
-// Headers pour les requêtes API (note: apiCall gère automatiquement le token)
-const headers = {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-};
-
-// Charger les données au démarrage
-loadDashboardStats();
-loadRecentReports();
-
-// STATISTIQUES
+// STATISTIQUES DASHBOARD
 function loadDashboardStats() {
-    apiCall(CONFIG.ENDPOINTS.admin.dashboard)
-        .then(data => {
-            document.getElementById('statTotal').textContent = data.total || 0;
-            document.getElementById('statPending').textContent = data.pending || 0;
-            document.getElementById('statInProgress').textContent = data.inProgress || 0;
-            document.getElementById('statResolved').textContent = data.resolved || 0;
-        })
-        .catch(err => {
-            console.error('Erreur dashboard:', err);
-            if (err.message && err.message.includes('Token')) logout();
-        });
+    console.log('[ADMIN] Chargement stats...');
+    
+    fetch(CONFIG.API_URL + '/api/admin/dashboard', {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Stats reçues:', data);
+        document.getElementById('statTotal').textContent = data.total || 0;
+        document.getElementById('statPending').textContent = data.pending || 0;
+        document.getElementById('statInProgress').textContent = data.inProgress || 0;
+        document.getElementById('statResolved').textContent = data.resolved || 0;
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur stats:', err);
+        if (err.message && err.message.includes('Token')) logout();
+    });
 }
 
 // SIGNALEMENTS RÉCENTS
 function loadRecentReports() {
+    console.log('[ADMIN] Chargement signalements récents...');
     const container = document.getElementById('recentReportsList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
 
-    apiCall(CONFIG.ENDPOINTS.admin.reports + '?limit=5')
-        .then(data => {
-            if (!data.reports || data.reports.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
-                return;
-            }
-            container.innerHTML = data.reports.map(report => createReportCard(report)).join('');
-        })
-        .catch(err => {
-            console.error('Erreur:', err);
-            container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
-        });
+    fetch(CONFIG.API_URL + '/api/admin/reports?limit=5', {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Signalements récents:', data);
+        if (!data.reports || data.reports.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
+            return;
+        }
+        container.innerHTML = data.reports.map(report => createReportCard(report)).join('');
+        attachReportCardEvents();
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur de chargement</h3></div>';
+    });
+}
+
+// Fonction pour échapper le HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // CRÉER CARTE SIGNALEMENT
 function createReportCard(report) {
-    const statusClass = `status-${report.status || 'pending'}`;
+    const statusClass = 'status-' + (report.status || 'pending');
     const statusText = {'pending': '⏳ En attente', 'in-progress': '🔄 En cours', 'resolved': '✅ Résolu'}[report.status] || '⏳ En attente';
-    const typeClass = `type-${report.incident_type}`;
+    const typeClass = 'type-' + (report.incident_type || 'autre');
     const date = new Date(report.created_at).toLocaleDateString('fr-FR');
     const time = new Date(report.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const description = escapeHtml(report.description || '');
 
     return `
-        <div class="report-card ${report.status === 'pending' ? 'urgent' : ''}" onclick="viewReportDetails(${report.id})">
+        <div class="report-card ${report.status === 'pending' ? 'urgent' : ''}" data-report-id="${report.id}">
             <div class="report-header">
                 <div>
-                    <div class="report-code">${report.tracking_code}</div>
-                    <span class="report-type ${typeClass}">${report.incident_type || 'Autre'}</span>
+                    <div class="report-code">${escapeHtml(report.tracking_code)}</div>
+                    <span class="report-type ${typeClass}">${escapeHtml(report.incident_type || 'Autre')}</span>
                 </div>
                 <div class="report-date">${date} à ${time}</div>
             </div>
             <div class="report-description">
-                ${(report.description || '').substring(0, 150)}${report.description && report.description.length > 150 ? '...' : ''}
+                ${description.substring(0, 150)}${description.length > 150 ? '...' : ''}
             </div>
             <div class="report-footer">
                 <span class="status-badge ${statusClass}">${statusText}</span>
                 <div class="action-btns">
-                    <button class="btn btn-view" onclick="event.stopPropagation(); viewReportDetails(${report.id})">👁️ Voir</button>
-                    <button class="btn btn-reply" onclick="event.stopPropagation(); viewReportDetails(${report.id})">💬 Répondre</button>
+                    <button class="btn btn-view" data-action="view" data-id="${report.id}">👁️ Voir</button>
+                    <button class="btn btn-reply" data-action="reply" data-id="${report.id}">💬 Répondre</button>
                 </div>
             </div>
         </div>
     `;
 }
 
+// Attacher les événements aux cartes de signalement
+function attachReportCardEvents() {
+    // Cartes cliquables
+    document.querySelectorAll('.report-card[data-report-id]').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('button')) {
+                const reportId = this.getAttribute('data-report-id');
+                console.log('[ADMIN] Clic carte:', reportId);
+                viewReportDetails(reportId);
+            }
+        });
+    });
+    
+    // Boutons voir
+    document.querySelectorAll('button[data-action="view"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const reportId = this.getAttribute('data-id');
+            console.log('[ADMIN] Bouton voir:', reportId);
+            viewReportDetails(reportId);
+        });
+    });
+    
+    // Boutons répondre
+    document.querySelectorAll('button[data-action="reply"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const reportId = this.getAttribute('data-id');
+            console.log('[ADMIN] Bouton répondre:', reportId);
+            viewReportDetails(reportId);
+        });
+    });
+}
+
 // TOUS LES SIGNALEMENTS
 function loadAllReports() {
+    console.log('[ADMIN] Chargement tous les signalements...');
     const container = document.getElementById('allReportsList');
     const statusFilter = document.getElementById('statusFilter').value;
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
 
-    let url = CONFIG.ENDPOINTS.admin.reports + '?limit=100';
-    if (statusFilter) url += `&status=${statusFilter}`;
+    let url = CONFIG.API_URL + '/api/admin/reports?limit=100';
+    if (statusFilter) url += '&status=' + statusFilter;
 
-    apiCall(url)
-        .then(data => {
-            if (!data.reports || data.reports.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
-                return;
-            }
-            container.innerHTML = `<p style="color: #666; margin-bottom: 15px;"><strong>${data.reports.length}</strong> signalement(s)</p>` + data.reports.map(report => createReportCard(report)).join('');
-        })
-        .catch(err => {
-            console.error('Erreur:', err);
-            container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
-        });
+    fetch(url, {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Tous signalements:', data);
+        if (!data.reports || data.reports.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
+            return;
+        }
+        container.innerHTML = '<p style="color: #666; margin-bottom: 15px;"><strong>' + data.reports.length + '</strong> signalement(s)</p>' + data.reports.map(report => createReportCard(report)).join('');
+        attachReportCardEvents();
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
+    });
 }
 
 // DÉTAILS SIGNALEMENT
 function viewReportDetails(reportId) {
+    console.log('[ADMIN] Détails signalement:', reportId);
     const modal = document.getElementById('reportModal');
     const modalBody = document.getElementById('modalBody');
     modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
     modal.classList.add('active');
 
-    apiCall(`/api/admin/reports/${reportId}`)
-        .then(data => {
-            const report = data.report;
-            const files = data.files || [];
-            const messages = data.messages || [];
+    fetch(CONFIG.API_URL + '/api/admin/reports/' + reportId, {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Détails reçus:', data);
+        const report = data.report;
+        const files = data.files || [];
+        const messages = data.messages || [];
 
-            modalBody.innerHTML = `
-                <div class="detail-grid">
-                    <div class="detail-item"><div class="detail-label">Code</div><div class="detail-value">${report.tracking_code}</div></div>
-                    <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${report.incident_type}</div></div>
-                    <div class="detail-item"><div class="detail-label">Date</div><div class="detail-value">${new Date(report.incident_date).toLocaleDateString('fr-FR')}</div></div>
-                    <div class="detail-item"><div class="detail-label">Lieu</div><div class="detail-value">${report.location}</div></div>
-                    <div class="detail-item"><div class="detail-label">Témoins</div><div class="detail-value">${report.witnesses || 'Non spécifié'}</div></div>
-                    <div class="detail-item">
-                        <div class="detail-label">Statut</div>
-                        <div class="detail-value">
-                            <select class="form-control" onchange="updateReportStatus(${report.id}, this.value)">
-                                <option value="pending" ${report.status === 'pending' ? 'selected' : ''}>En attente</option>
-                                <option value="in-progress" ${report.status === 'in-progress' ? 'selected' : ''}>En cours</option>
-                                <option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Résolu</option>
-                            </select>
-                        </div>
+        modalBody.innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-item"><div class="detail-label">Code</div><div class="detail-value">${escapeHtml(report.tracking_code)}</div></div>
+                <div class="detail-item"><div class="detail-label">Type</div><div class="detail-value">${escapeHtml(report.incident_type)}</div></div>
+                <div class="detail-item"><div class="detail-label">Date</div><div class="detail-value">${new Date(report.incident_date).toLocaleDateString('fr-FR')}</div></div>
+                <div class="detail-item"><div class="detail-label">Lieu</div><div class="detail-value">${escapeHtml(report.location)}</div></div>
+                <div class="detail-item"><div class="detail-label">Témoins</div><div class="detail-value">${escapeHtml(report.witnesses) || 'Non spécifié'}</div></div>
+                <div class="detail-item">
+                    <div class="detail-label">Statut</div>
+                    <div class="detail-value">
+                        <select class="form-control" id="statusSelect" data-report-id="${report.id}">
+                            <option value="pending" ${report.status === 'pending' ? 'selected' : ''}>En attente</option>
+                            <option value="in-progress" ${report.status === 'in-progress' ? 'selected' : ''}>En cours</option>
+                            <option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Résolu</option>
+                        </select>
                     </div>
                 </div>
-                <div style="margin: 20px 0;">
-                    <h3>Description</h3>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;">${report.description}</div>
-                </div>
-                ${files.length > 0 ? `<div class="files-list"><h3>Fichiers (${files.length})</h3>${files.map(f => `<div class="file-item"><span class="file-icon">${f.file_type.startsWith('image/') ? '🖼️' : '🎥'}</span><div>${f.original_name}</div></div>`).join('')}</div>` : ''}
-                ${messages.length > 0 ? `<div style="margin: 20px 0;"><h3>Discussion (${messages.length})</h3><div style="max-height: 300px; overflow-y: auto;">${messages.map(m => `<div style="padding: 10px; margin-bottom: 10px; background: ${m.sender_type === 'school' ? '#e3f2fd' : '#f8f9fa'}; border-radius: 8px;"><strong>${m.sender_type === 'school' ? '🏫 École' : '👤 Élève'}</strong> <small>${new Date(m.created_at).toLocaleString('fr-FR')}</small><p style="margin-top: 8px;">${m.message}</p></div>`).join('')}</div></div>` : ''}
-                <div class="reply-form">
-                    <h3>Répondre</h3>
-                    <form onsubmit="sendReply(event, ${report.id})">
-                        <div class="form-group"><textarea class="form-control" id="replyMessage" required></textarea></div>
-                        <button type="submit" class="action-btn-primary">📤 Envoyer</button>
-                    </form>
-                </div>
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
-                    <button class="btn btn-delete" onclick="deleteReport(${report.id})">🗑️ Supprimer</button>
-                </div>
-            `;
-        })
-        .catch(err => {
-            console.error('Erreur:', err);
-            modalBody.innerHTML = '<p style="color: red;">Erreur</p>';
+            </div>
+            <div style="margin: 20px 0;">
+                <h3>Description</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;">${escapeHtml(report.description)}</div>
+            </div>
+            ${files.length > 0 ? '<div class="files-list"><h3>Fichiers (' + files.length + ')</h3>' + files.map(f => '<div class="file-item"><span class="file-icon">' + (f.file_type.startsWith('image/') ? '🖼️' : '🎥') + '</span><div>' + escapeHtml(f.original_name) + '</div></div>').join('') + '</div>' : ''}
+            ${messages.length > 0 ? '<div style="margin: 20px 0;"><h3>Discussion (' + messages.length + ')</h3><div style="max-height: 300px; overflow-y: auto;">' + messages.map(m => '<div style="padding: 10px; margin-bottom: 10px; background: ' + (m.sender_type === 'school' ? '#e3f2fd' : '#f8f9fa') + '; border-radius: 8px;"><strong>' + (m.sender_type === 'school' ? '🏫 École' : '👤 Élève') + '</strong> <small>' + new Date(m.created_at).toLocaleString('fr-FR') + '</small><p style="margin-top: 8px;">' + escapeHtml(m.message) + '</p></div>').join('') + '</div></div>' : ''}
+            <div class="reply-form">
+                <h3>Répondre</h3>
+                <form id="replyForm">
+                    <input type="hidden" id="replyReportId" value="${report.id}">
+                    <div class="form-group"><textarea class="form-control" id="replyMessage" required placeholder="Écrire votre réponse..."></textarea></div>
+                    <button type="submit" class="action-btn-primary">📤 Envoyer</button>
+                </form>
+            </div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                <button class="btn btn-delete" id="deleteReportBtn" data-id="${report.id}">🗑️ Supprimer ce signalement</button>
+            </div>
+        `;
+        
+        // Attacher les événements du modal
+        attachModalEvents(report.id);
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        modalBody.innerHTML = '<p style="color: red;">Erreur de chargement</p>';
+    });
+}
+
+// Attacher les événements du modal
+function attachModalEvents(reportId) {
+    // Changement de statut
+    const statusSelect = document.getElementById('statusSelect');
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+            const newStatus = this.value;
+            console.log('[ADMIN] Changement statut:', newStatus);
+            updateReportStatus(reportId, newStatus);
         });
+    }
+    
+    // Formulaire réponse
+    const replyForm = document.getElementById('replyForm');
+    if (replyForm) {
+        replyForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const message = document.getElementById('replyMessage').value;
+            console.log('[ADMIN] Envoi réponse');
+            sendReply(reportId, message);
+        });
+    }
+    
+    // Bouton supprimer
+    const deleteBtn = document.getElementById('deleteReportBtn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Supprimer signalement');
+            deleteReport(reportId);
+        });
+    }
 }
 
 // METTRE À JOUR STATUT
 function updateReportStatus(reportId, newStatus) {
-    apiCall(`/api/admin/reports/${reportId}/status`, {
+    fetch(CONFIG.API_URL + '/api/admin/reports/' + reportId + '/status', {
         method: 'PATCH',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ status: newStatus })
     })
+    .then(res => res.json())
     .then(data => {
+        console.log('[ADMIN] Statut mis à jour:', data);
         alert('✅ Statut mis à jour');
         refreshData();
     })
-    .catch(err => alert('❌ Erreur: ' + err.message));
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        alert('❌ Erreur: ' + err.message);
+    });
 }
 
 // RÉPONDRE
-function sendReply(event, reportId) {
-    event.preventDefault();
-    const message = document.getElementById('replyMessage').value;
-    apiCall(`/api/admin/reports/${reportId}/reply`, {
+function sendReply(reportId, message) {
+    fetch(CONFIG.API_URL + '/api/admin/reports/' + reportId + '/reply', {
         method: 'POST',
-        body: JSON.stringify({ message })
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: message })
     })
+    .then(res => res.json())
     .then(data => {
-        alert('✅ Envoyé');
+        console.log('[ADMIN] Réponse envoyée:', data);
+        alert('✅ Message envoyé');
         document.getElementById('replyMessage').value = '';
         viewReportDetails(reportId);
     })
-    .catch(err => alert('❌ Erreur: ' + err.message));
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        alert('❌ Erreur: ' + err.message);
+    });
 }
 
 // SUPPRIMER
 function deleteReport(reportId) {
-    if (!confirm('⚠️ Supprimer ce signalement ?')) return;
-    apiCall(`/api/admin/reports/${reportId}`, { method: 'DELETE' })
-        .then(data => {
-            alert('✅ Supprimé');
-            closeModal('reportModal');
-            refreshData();
-        })
-        .catch(err => alert('❌ Erreur: ' + err.message));
+    if (!confirm('⚠️ Supprimer ce signalement ? Cette action est irréversible.')) return;
+    
+    fetch(CONFIG.API_URL + '/api/admin/reports/' + reportId, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Supprimé:', data);
+        alert('✅ Signalement supprimé');
+        closeModal('reportModal');
+        refreshData();
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        alert('❌ Erreur: ' + err.message);
+    });
 }
 
 // DISCUSSIONS
 function loadDiscussions() {
+    console.log('[ADMIN] Chargement discussions...');
     const container = document.getElementById('discussionsList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
-    apiCall('/api/admin/discussions')
-        .then(data => {
-            if (!data.discussions || data.discussions.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><h3>Aucune discussion</h3></div>';
-                return;
-            }
-            container.innerHTML = data.discussions.map(d => `
-                <div class="report-card" onclick="viewReportDetails(${d.id})">
-                    <div class="report-header">
-                        <div><div class="report-code">${d.tracking_code}</div></div>
-                        <div class="report-date">${new Date(d.last_message).toLocaleString('fr-FR')}</div>
-                    </div>
-                    <div class="report-footer">
-                        <span>${d.message_count} message(s)</span>
-                        <button class="btn btn-view" onclick="event.stopPropagation(); viewReportDetails(${d.id})">💬 Ouvrir</button>
-                    </div>
+    
+    fetch(CONFIG.API_URL + '/api/admin/discussions', {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Discussions:', data);
+        if (!data.discussions || data.discussions.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><h3>Aucune discussion active</h3></div>';
+            return;
+        }
+        container.innerHTML = data.discussions.map(d => `
+            <div class="report-card" data-discussion-id="${d.id}">
+                <div class="report-header">
+                    <div><div class="report-code">${escapeHtml(d.tracking_code)}</div></div>
+                    <div class="report-date">${new Date(d.last_message).toLocaleString('fr-FR')}</div>
                 </div>
-            `).join('');
-        })
-        .catch(err => {
-            console.error('Erreur:', err);
-            container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
+                <div class="report-footer">
+                    <span>${d.message_count} message(s)</span>
+                    <button class="btn btn-view" data-action="open-discussion" data-id="${d.id}">💬 Ouvrir</button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Attacher événements
+        document.querySelectorAll('.report-card[data-discussion-id]').forEach(card => {
+            card.addEventListener('click', function() {
+                viewReportDetails(this.getAttribute('data-discussion-id'));
+            });
         });
+        document.querySelectorAll('button[data-action="open-discussion"]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                viewReportDetails(this.getAttribute('data-id'));
+            });
+        });
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
+    });
 }
 
 // STATISTIQUES
 function loadStatistics() {
+    console.log('[ADMIN] Chargement statistiques...');
     const container = document.getElementById('statisticsContent');
     const period = document.getElementById('periodFilter').value;
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
-    apiCall(`/api/admin/statistics?period=${period}`)
-        .then(data => {
-            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
-            if (data.byType && data.byType.length > 0) {
-                html += `<div class="chart-container"><h3>📊 Par Type</h3>${data.byType.map(i => `<div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>${i.incident_type}</span><strong>${i.count}</strong></div><div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;"><div style="background: #667eea; height: 100%; width: ${(i.count / data.byType.reduce((a,b) => a + b.count, 0) * 100)}%;"></div></div></div>`).join('')}</div>`;
-            }
-            if (data.byStatus && data.byStatus.length > 0) {
-                html += `<div class="chart-container"><h3>📈 Par Statut</h3>${data.byStatus.map(i => `<div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>${i.status}</span><strong>${i.count}</strong></div><div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;"><div style="background: ${i.status === 'resolved' ? '#28a745' : i.status === 'in-progress' ? '#17a2b8' : '#ffc107'}; height: 100%; width: ${(i.count / data.byStatus.reduce((a,b) => a + b.count, 0) * 100)}%;"></div></div></div>`).join('')}</div>`;
-            }
-            html += '</div>';
-            container.innerHTML = html;
-        })
-        .catch(err => {
-            console.error('Erreur:', err);
-            container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
-        });
+    
+    fetch(CONFIG.API_URL + '/api/admin/statistics?period=' + period, {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Statistiques:', data);
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">';
+        
+        if (data.byType && data.byType.length > 0) {
+            const total = data.byType.reduce((a, b) => a + b.count, 0);
+            html += '<div class="chart-container"><h3>📊 Par Type</h3>' + data.byType.map(i => 
+                '<div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>' + escapeHtml(i.incident_type) + '</span><strong>' + i.count + '</strong></div><div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;"><div style="background: #667eea; height: 100%; width: ' + (i.count / total * 100) + '%;"></div></div></div>'
+            ).join('') + '</div>';
+        }
+        
+        if (data.byStatus && data.byStatus.length > 0) {
+            const total = data.byStatus.reduce((a, b) => a + b.count, 0);
+            html += '<div class="chart-container"><h3>📈 Par Statut</h3>' + data.byStatus.map(i => {
+                const color = i.status === 'resolved' ? '#28a745' : (i.status === 'in-progress' ? '#17a2b8' : '#ffc107');
+                return '<div style="margin: 10px 0;"><div style="display: flex; justify-content: space-between; margin-bottom: 5px;"><span>' + escapeHtml(i.status) + '</span><strong>' + i.count + '</strong></div><div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;"><div style="background: ' + color + '; height: 100%; width: ' + (i.count / total * 100) + '%;"></div></div></div>';
+            }).join('') + '</div>';
+        }
+        
+        html += '</div>';
+        container.innerHTML = html || '<div class="empty-state"><div class="icon">📊</div><h3>Aucune donnée</h3></div>';
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
+    });
 }
 
 // ÉQUIPE
 function loadTeam() {
+    console.log('[ADMIN] Chargement équipe...');
     const container = document.getElementById('teamList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
-    apiCall('/api/admin/team')
-        .then(data => {
-            if (!data.team || data.team.length === 0) {
-                container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>Aucun membre</h3></div>';
-                return;
-            }
-            container.innerHTML = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">${data.team.map(m => `<div class="detail-item" style="padding: 20px;"><div style="text-align: center; margin-bottom: 15px;"><div class="admin-avatar" style="margin: 0 auto;">👤</div></div><h3 style="text-align: center; margin-bottom: 10px;">${m.first_name} ${m.last_name}</h3><p style="text-align: center; color: #666; margin-bottom: 15px;">${m.position}</p><div style="font-size: 0.9em;"><p>📧 ${m.email}</p><p>📞 ${m.phone}</p><p style="color: #999; margin-top: 10px;">Membre depuis ${new Date(m.created_at).toLocaleDateString('fr-FR')}</p></div></div>`).join('')}</div>`;
-        })
-        .catch(err => {
-            console.error('Erreur:', err);
-            container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
-        });
+    
+    fetch(CONFIG.API_URL + '/api/admin/team', {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Équipe:', data);
+        if (!data.team || data.team.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><h3>Aucun membre</h3></div>';
+            return;
+        }
+        container.innerHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">' + data.team.map(m => 
+            '<div class="detail-item" style="padding: 20px;"><div style="text-align: center; margin-bottom: 15px;"><div class="admin-avatar" style="margin: 0 auto;">👤</div></div><h3 style="text-align: center; margin-bottom: 10px;">' + escapeHtml(m.first_name) + ' ' + escapeHtml(m.last_name) + '</h3><p style="text-align: center; color: #666; margin-bottom: 15px;">' + escapeHtml(m.position) + '</p><div style="font-size: 0.9em;"><p>📧 ' + escapeHtml(m.email) + '</p><p>📞 ' + escapeHtml(m.phone) + '</p><p style="color: #999; margin-top: 10px;">Membre depuis ' + new Date(m.created_at).toLocaleDateString('fr-FR') + '</p></div></div>'
+        ).join('') + '</div>';
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
+    });
 }
 
 // PARAMÈTRES
 function loadSettings() {
-    apiCall(`/api/schools/${admin.schoolCode}`)
-        .then(data => {
-            document.getElementById('settingsSchoolCode').textContent = data.school_code;
-            document.getElementById('settingsSchoolName').textContent = data.name;
-            document.getElementById('settingsCity').textContent = data.city;
-            document.getElementById('settingsStatus').textContent = data.status === 'active' ? 'Active' : 'Inactive';
-        })
-        .catch(err => console.error('Erreur:', err));
+    console.log('[ADMIN] Chargement paramètres...');
+    
+    fetch(CONFIG.API_URL + '/api/schools/' + admin.schoolCode, {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Paramètres:', data);
+        document.getElementById('settingsSchoolCode').textContent = data.school_code || '-';
+        document.getElementById('settingsSchoolName').textContent = data.name || '-';
+        document.getElementById('settingsCity').textContent = data.city || '-';
+        document.getElementById('settingsStatus').textContent = data.status === 'active' ? 'Active' : 'Inactive';
+    })
+    .catch(err => console.error('[ADMIN] Erreur:', err));
 }
 
 // CHANGER MOT DE PASSE
-function changePassword(event) {
-    event.preventDefault();
+function changePassword() {
     const currentPassword = document.getElementById('currentPassword').value;
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
-    if (newPassword !== confirmPassword) { alert('❌ Mots de passe différents'); return; }
-    apiCall('/api/auth/change-password', {
+    
+    if (newPassword !== confirmPassword) {
+        alert('❌ Les mots de passe ne correspondent pas');
+        return;
+    }
+    
+    fetch(CONFIG.API_URL + '/api/auth/change-password', {
         method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ currentPassword, newPassword })
     })
+    .then(res => res.json())
     .then(data => {
-        alert('✅ Mot de passe changé');
+        console.log('[ADMIN] Mot de passe changé:', data);
+        alert('✅ Mot de passe changé avec succès');
         document.getElementById('changePasswordForm').reset();
     })
-    .catch(err => alert('❌ Erreur: ' + err.message));
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        alert('❌ Erreur: ' + err.message);
+    });
 }
 
 // NAVIGATION
-function showSection(sectionId) {
+function showSection(sectionId, menuItem) {
+    console.log('[ADMIN] Navigation vers:', sectionId);
+    
+    // Cacher toutes les sections
     document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    
+    // Désactiver tous les menu items
     document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-    document.getElementById(sectionId).classList.add('active');
-    event.target.closest('.menu-item').classList.add('active');
-    const titles = {'dashboard': 'Tableau de Bord', 'reports': 'Tous les Signalements', 'discussions': 'Discussions', 'statistics': 'Statistiques', 'team': 'Équipe', 'settings': 'Paramètres'};
+    
+    // Activer la section
+    const section = document.getElementById(sectionId);
+    if (section) section.classList.add('active');
+    
+    // Activer le menu item
+    if (menuItem) menuItem.classList.add('active');
+    
+    // Mettre à jour le titre
+    const titles = {
+        'dashboard': 'Tableau de Bord',
+        'reports': 'Tous les Signalements',
+        'discussions': 'Discussions',
+        'statistics': 'Statistiques',
+        'team': 'Équipe',
+        'settings': 'Paramètres'
+    };
     document.getElementById('pageTitle').textContent = titles[sectionId] || 'Dashboard';
+    
+    // Charger les données de la section
     if (sectionId === 'reports') loadAllReports();
     if (sectionId === 'discussions') loadDiscussions();
     if (sectionId === 'statistics') loadStatistics();
@@ -1156,11 +1538,30 @@ function showSection(sectionId) {
 }
 
 // UTILITAIRES
-function refreshData() { loadDashboardStats(); loadRecentReports(); if (document.getElementById('reports').classList.contains('active')) loadAllReports(); }
-function filterReports() { loadAllReports(); }
-function closeModal(modalId) { document.getElementById(modalId).classList.remove('active'); }
-function logout() { if (confirm('Déconnexion ?')) { localStorage.removeItem('speakfree_token'); localStorage.removeItem('speakfree_admin'); window.location.href = '/login'; } }
-window.onclick = function(event) { if (event.target.classList.contains('modal')) event.target.classList.remove('active'); }
+function refreshData() {
+    console.log('[ADMIN] Actualisation données...');
+    loadDashboardStats();
+    loadRecentReports();
+    if (document.getElementById('reports').classList.contains('active')) {
+        loadAllReports();
+    }
+}
+
+function closeModal(modalId) {
+    console.log('[ADMIN] Fermeture modal:', modalId);
+    document.getElementById(modalId).classList.remove('active');
+}
+
+function logout() {
+    if (confirm('🚪 Voulez-vous vraiment vous déconnecter ?')) {
+        console.log('[ADMIN] Déconnexion');
+        localStorage.removeItem('speakfree_token');
+        localStorage.removeItem('speakfree_admin');
+        window.location.href = '/login.html';
+    }
+}
+
+console.log('[ADMIN] Script chargé');
     </script>
 </body>
 </html>

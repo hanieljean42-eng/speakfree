@@ -298,7 +298,7 @@
 </head>
 <body>
     <div class="container">
-        <a href="/" class="back-btn">← Retour à l'accueil</a>
+        <a href="/index.html" class="back-btn">← Retour à l'accueil</a>
 
         <header>
             <h1>🤖 Chat avec Haniel</h1>
@@ -353,112 +353,186 @@
                     class="chat-input" 
                     id="messageInput" 
                     placeholder="Écris ton message ici..."
-                    onkeypress="if(event.key === 'Enter') sendMessage()"
                 >
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <button class="send-btn" id="sendBtn">
                     Envoyer 📤
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Configuration API -->
+    <!-- Configuration API - DOIT ÊTRE CHARGÉ EN PREMIER -->
     <script src="/config.js"></script>
     
     <script>
-        let conversationHistory = [];
-        let sessionId = null;
+        // Variables globales
         let sessionCode = null;
+        let sessionId = null;
+        let currentStep = 0;
+        let reportData = {
+            incidentType: '',
+            date: '',
+            location: '',
+            witnesses: '',
+            description: ''
+        };
 
-        // Créer une nouvelle session au chargement
-        apiCall(CONFIG.ENDPOINTS.aiChat.createSession, {
-            method: 'POST',
-            body: JSON.stringify({
-                schoolCode: localStorage.getItem('selectedSchoolCode') || null
-            })
-        })
-        .then(data => {
-            if (data.sessionCode) {
-                sessionCode = data.sessionCode;
-                sessionId = data.sessionId;
-                
-                // Afficher le code de session
-                document.getElementById('sessionInfo').style.display = 'block';
-                document.getElementById('sessionCode').textContent = sessionCode;
-
-                // Charger le message de bienvenue
-                loadSessionMessages();
+        // Attendre le chargement complet
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[CHAT] Page chargée, initialisation...');
+            
+            // Vérifier que config.js est chargé
+            if (typeof CONFIG === 'undefined') {
+                console.error('[CHAT] ERREUR: config.js non chargé!');
+                addMessage('bot', '❌ Erreur de configuration. Rafraîchis la page.');
+                return;
             }
-        })
-        .catch(err => console.error('Erreur création session:', err));
+            
+            console.log('[CHAT] CONFIG OK, API_URL:', CONFIG.API_URL);
+            
+            // Attacher les événements
+            attachEvents();
+            
+            // Créer une session
+            createSession();
+        });
 
-        function loadSessionMessages() {
-            apiCall(`/api/ai-chat/session/${sessionCode}`)
-                .then(data => {
-                    if (data.messages) {
-                        data.messages.forEach(msg => {
-                            if (msg.role === 'assistant') {
-                                addMessage('bot', msg.content);
-                            }
-                        });
+        // Attacher les événements aux boutons
+        function attachEvents() {
+            // Bouton Envoyer
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('[CHAT] Clic sur Envoyer');
+                    sendMessage();
+                });
+                console.log('[CHAT] Bouton Envoyer attaché');
+            }
+            
+            // Touche Entrée
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        console.log('[CHAT] Touche Entrée');
+                        sendMessage();
                     }
-                })
-                .catch(err => console.error('Erreur chargement messages:', err));
+                });
+                input.focus();
+                console.log('[CHAT] Input attaché');
+            }
         }
 
-        async function sendMessage() {
+        // Créer une nouvelle session
+        function createSession() {
+            console.log('[CHAT] Création session...');
+            
+            const schoolCode = localStorage.getItem('selectedSchoolCode') || null;
+            
+            fetch(CONFIG.API_URL + '/api/ai-chat/create-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schoolCode: schoolCode })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[CHAT] Session créée:', data);
+                
+                if (data.sessionCode) {
+                    sessionCode = data.sessionCode;
+                    sessionId = data.sessionId;
+                    
+                    // Afficher le code
+                    document.getElementById('sessionInfo').style.display = 'block';
+                    document.getElementById('sessionCode').textContent = sessionCode;
+                    
+                    console.log('[CHAT] Session active:', sessionCode);
+                } else if (data.error) {
+                    console.error('[CHAT] Erreur:', data.error);
+                    addMessage('bot', '❌ Erreur: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('[CHAT] Erreur création session:', err);
+                addMessage('bot', '❌ Impossible de créer la session. Vérifie ta connexion.');
+            });
+        }
+
+        // Envoyer un message
+        function sendMessage() {
             const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
             const message = input.value.trim();
             
-            if (!message || !sessionCode) return;
-
+            console.log('[CHAT] sendMessage appelé, message:', message);
+            
+            if (!message) {
+                console.log('[CHAT] Message vide, ignoré');
+                return;
+            }
+            
+            if (!sessionCode) {
+                console.log('[CHAT] Pas de session, création...');
+                addMessage('bot', '⏳ Création de la session en cours...');
+                createSession();
+                return;
+            }
+            
             // Désactiver l'input
             input.disabled = true;
-            document.getElementById('sendBtn').disabled = true;
-
-            // Afficher le message de l'utilisateur
+            sendBtn.disabled = true;
+            
+            // Afficher le message utilisateur
             addMessage('user', message);
             input.value = '';
-
-            // Afficher l'indicateur de saisie
+            
+            // Afficher "en train d'écrire"
             showTypingIndicator();
-
-            try {
-                // Appel API backend
-                const data = await apiCall(CONFIG.ENDPOINTS.aiChat.sendMessage, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        sessionCode: sessionCode,
-                        message: message
-                    })
-                });
+            
+            console.log('[CHAT] Envoi au serveur...');
+            
+            // Appel API
+            fetch(CONFIG.API_URL + '/api/ai-chat/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionCode: sessionCode,
+                    message: message
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[CHAT] Réponse:', data);
+                hideTypingIndicator();
                 
-                hideTypingIndicator();
-
-                if (data.error) {
-                    addMessage('bot', 'Désolé, une erreur s\'est produite. Peux-tu reformuler ta question ?');
-                } else {
+                if (data.message) {
                     addMessage('bot', data.message);
+                } else if (data.error) {
+                    addMessage('bot', '❌ ' + data.error);
                 }
-
-            } catch (error) {
-                console.error('Erreur:', error);
+            })
+            .catch(err => {
+                console.error('[CHAT] Erreur envoi:', err);
                 hideTypingIndicator();
-                addMessage('bot', 'Désolé, je rencontre un problème technique. Réessaye dans quelques instants.');
-            }
-
-            // Réactiver l'input
-            input.disabled = false;
-            document.getElementById('sendBtn').disabled = false;
-            input.focus();
+                addMessage('bot', '❌ Erreur de connexion. Réessaye.');
+            })
+            .finally(() => {
+                // Réactiver l'input
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            });
         }
 
+        // Ajouter un message à l'écran
         function addMessage(sender, text) {
-            const messagesContainer = document.getElementById('messagesContainer');
-            const typingIndicator = document.getElementById('typingIndicator');
+            const container = document.getElementById('messagesContainer');
+            const typing = document.getElementById('typingIndicator');
             
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
+            const div = document.createElement('div');
+            div.className = 'message ' + sender;
             
             const avatar = document.createElement('div');
             avatar.className = 'message-avatar';
@@ -466,27 +540,31 @@
             
             const content = document.createElement('div');
             content.className = 'message-content';
-            content.textContent = text;
+            content.innerHTML = text.replace(/\n/g, '<br>');
             
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(content);
+            div.appendChild(avatar);
+            div.appendChild(content);
             
-            messagesContainer.insertBefore(messageDiv, typingIndicator);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            container.insertBefore(div, typing);
+            container.scrollTop = container.scrollHeight;
+            
+            console.log('[CHAT] Message ajouté:', sender, text.substring(0, 50) + '...');
         }
 
+        // Afficher l'indicateur de saisie
         function showTypingIndicator() {
-            document.getElementById('typingIndicator').classList.add('active');
+            const typing = document.getElementById('typingIndicator');
+            typing.style.display = 'flex';
             document.getElementById('messagesContainer').scrollTop = 
                 document.getElementById('messagesContainer').scrollHeight;
         }
 
+        // Masquer l'indicateur de saisie
         function hideTypingIndicator() {
-            document.getElementById('typingIndicator').classList.remove('active');
+            document.getElementById('typingIndicator').style.display = 'none';
         }
 
-        // Focus automatique sur l'input
-        document.getElementById('messageInput').focus();
+        console.log('[CHAT] Script chargé');
     </script>
 </body>
 </html>

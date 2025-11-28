@@ -341,19 +341,19 @@
             <div class="divider">OU</div>
 
             <div class="quick-actions">
-                <a href="/super-admin" class="quick-btn">
+                <a href="/super-admin.html" class="quick-btn">
                     ⚙️ Super Admin
                 </a>
-                <a href="/register-school" class="quick-btn">
+                <a href="/register-school.html" class="quick-btn">
                     🏫 Inscrire École
                 </a>
             </div>
 
-            <a href="/" class="back-link">← Retour à l'accueil</a>
+            <a href="/index.html" class="back-link">← Retour à l'accueil</a>
         </div>
 
         <div class="login-footer">
-            Première fois ? <a href="/register-school">Inscrivez votre établissement</a>
+            Première fois ? <a href="/register-school.html">Inscrivez votre établissement</a>
         </div>
     </div>
 
@@ -426,10 +426,10 @@
                     localStorage.setItem('speakfree_email', identifier);
                 }
 
-                console.log('[LOGIN] Redirection vers /admin...');
+                console.log('[LOGIN] Redirection vers /admin.html...');
                 // Rediriger vers le dashboard
                 setTimeout(() => {
-                    window.location.href = '/admin';
+                    window.location.href = '/admin.html';
                 }, 1000);
             })
             .catch(error => {
