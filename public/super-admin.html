@@ -468,6 +468,18 @@
     <script>
         const SUPER_ADMIN_CODE = '200700';
 
+        // FONCTION LOGOUT - En premier pour être disponible immédiatement
+        function logout() {
+            console.log('[LOGOUT] Bouton déconnexion cliqué');
+            if (confirm('Se déconnecter du panel super admin ?')) {
+                console.log('[LOGOUT] Déconnexion confirmée');
+                document.getElementById('dashboard').classList.remove('active');
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('adminCode').value = '';
+                console.log('[LOGOUT] Déconnexion effectuée');
+            }
+        }
+
         // Fonction pour échapper les caractères HTML
         function escapeHtml(text) {
             if (text === null || text === undefined) return '';
@@ -1016,14 +1028,6 @@ Merci de faire confiance à SpeakFree ! 🙏`;
                     console.error('[DELETE] Erreur:', err);
                     alert('❌ Erreur lors de la suppression: ' + err.message);
                 });
-            }
-        }
-
-        function logout() {
-            if (confirm('Se déconnecter du panel super admin ?')) {
-                document.getElementById('dashboard').classList.remove('active');
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('adminCode').value = '';
             }
         }
     </script>
