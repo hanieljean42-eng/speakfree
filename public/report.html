@@ -400,9 +400,14 @@
                 Tu en auras besoin pour suivre ton signalement et discuter avec l'école.
             </p>
 
-            <button class="btn" onclick="window.location.href='/index.html'">
-                🏠 Retour à l'accueil
-            </button>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <button class="btn" id="goHomeBtn" style="background: #667eea;">
+                    🏠 Retour à l'accueil
+                </button>
+                <button class="btn" id="goDiscussionBtn" style="background: #28a745;">
+                    💬 Aller à la Discussion
+                </button>
+            </div>
         </div>
     </div>
 
@@ -500,6 +505,17 @@
 
                 // Afficher le modal
                 document.getElementById('successModal').classList.add('active');
+                
+                // Attacher les événements aux boutons du modal
+                document.getElementById('goHomeBtn').addEventListener('click', function() {
+                    window.location.href = '/index.html';
+                });
+                document.getElementById('goDiscussionBtn').addEventListener('click', function() {
+                    // Sauvegarder le code de discussion pour l'utiliser
+                    localStorage.setItem('discussionCodeToUse', data.discussionCode);
+                    window.location.href = '/discussion.html';
+                });
+                
             } catch (error) {
                 console.error('Erreur:', error);
                 alert('❌ Erreur: ' + (error.message || 'Erreur de connexion. Veuillez réessayer.'));

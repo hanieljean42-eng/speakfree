@@ -1,10 +1,33 @@
-// routes/ai-chat.js - Chat IA avec API Claude
+// routes/ai-chat.js - Chat IA Haniel - Signalement automatique
 const express = require('express');
 const router = express.Router();
+
+// Étapes du signalement
+const STEPS = {
+    WELCOME: 0,
+    SCHOOL: 1,
+    TYPE: 2,
+    DATE: 3,
+    LOCATION: 4,
+    DESCRIPTION: 5,
+    WITNESSES: 6,
+    CONFIRM: 7,
+    COMPLETED: 8
+};
 
 // Fonction pour générer un code de session
 function generateSessionCode() {
     return 'CHAT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
+
+// Fonction pour générer un code de suivi
+function generateTrackingCode() {
+    return 'RPT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+}
+
+// Fonction pour générer un code de discussion
+function generateDiscussionCode() {
+    return 'DSC-' + Math.random().toString(36).substr(2, 9).toUpperCase();
 }
 
 // POST /api/ai-chat/create-session - Créer une nouvelle session de chat
@@ -12,86 +35,92 @@ router.post('/create-session', (req, res) => {
     const db = req.app.locals.db;
     const { schoolCode } = req.body;
     
-    // Vérifier que l'école existe (optionnel)
-    if (schoolCode) {
-        db.get('SELECT id FROM schools WHERE school_code = ?', [schoolCode], (err, school) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!school) {
-                return res.status(404).json({ error: 'École non trouvée' });
-            }
-            
-            createSession(school.id);
-        });
-    } else {
-        createSession(null);
-    }
+    const sessionCode = generateSessionCode();
     
-    function createSession(schoolId) {
-        const sessionCode = generateSessionCode();
-        
-        db.run(
-            'INSERT INTO ai_chat_sessions (session_code, school_id, status) VALUES (?, ?, "active")',
-            [sessionCode, schoolId],
-            function(err) {
-                if (err) {
-                    return res.status(500).json({ error: 'Erreur création session' });
-                }
-                
-                // Ajouter le message de bienvenue
-                const welcomeMessage = "Bonjour ! Je suis Haniel, ton assistant virtuel SpeakFree. Je suis là pour t'aider à créer ton signalement de manière simple et anonyme. Pour commencer, peux-tu me dire quel type de situation tu souhaites signaler ? (harcèlement, violence, vol, discrimination, autre...)";
-                
-                db.run(
-                    'INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "assistant", ?)',
-                    [this.lastID, welcomeMessage],
-                    (err) => {
-                        if (err) {
-                            console.error('Erreur ajout message bienvenue:', err);
-                        }
-                        
-                        res.status(201).json({
-                            sessionCode,
-                            sessionId: this.lastID,
-                            message: 'Session créée avec succès'
+    // Créer la session avec les données du signalement
+    const reportData = JSON.stringify({
+        step: STEPS.WELCOME,
+        schoolCode: schoolCode || null,
+        schoolId: null,
+        incidentType: '',
+        incidentDate: '',
+        location: '',
+        description: '',
+        witnesses: ''
+    });
+    
+    db.run(
+        'INSERT INTO ai_chat_sessions (session_code, school_id, status, report_data) VALUES (?, NULL, "active", ?)',
+        [sessionCode, reportData],
+        function(err) {
+            if (err) {
+                console.error('Erreur création session:', err);
+                return res.status(500).json({ error: 'Erreur création session' });
+            }
+            
+            const sessionId = this.lastID;
+            
+            // Message de bienvenue
+            let welcomeMessage = `👋 **Bonjour ! Je suis Haniel**, ton assistant SpeakFree.
+
+Je vais t'aider à créer ton signalement de manière **100% anonyme** et sécurisée.
+
+Je vais te poser quelques questions simples. Réponds naturellement, je m'occupe du reste ! 🛡️`;
+            
+            // Si pas de code école, demander d'abord l'école
+            if (!schoolCode) {
+                welcomeMessage += `
+
+📌 **Première question :** Quel est le **code de ton école** ?
+_(Le code ressemble à : ECOLE-XXXXX)_`;
+            }
+            
+            db.run(
+                'INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "assistant", ?)',
+                [sessionId, welcomeMessage],
+                (err) => {
+                    if (err) console.error('Erreur ajout message:', err);
+                    
+                    // Si code école fourni, passer à l'étape suivante
+                    if (schoolCode) {
+                        // Vérifier l'école et mettre à jour
+                        db.get('SELECT id, name FROM schools WHERE school_code = ? AND status = "active"', [schoolCode], (err, school) => {
+                            if (school) {
+                                const newData = JSON.parse(reportData);
+                                newData.step = STEPS.TYPE;
+                                newData.schoolId = school.id;
+                                newData.schoolCode = schoolCode;
+                                newData.schoolName = school.name;
+                                
+                                db.run('UPDATE ai_chat_sessions SET school_id = ?, report_data = ? WHERE id = ?',
+                                    [school.id, JSON.stringify(newData), sessionId]);
+                                
+                                // Ajouter la question sur le type
+                                const typeQuestion = `✅ École **${school.name}** sélectionnée.
+
+📌 **Quel type d'incident veux-tu signaler ?**
+
+1️⃣ Harcèlement
+2️⃣ Violence physique
+3️⃣ Violence verbale / Insultes
+4️⃣ Cyberharcèlement
+5️⃣ Vol
+6️⃣ Discrimination
+7️⃣ Drogue / Alcool
+8️⃣ Autre
+
+_(Tape le numéro ou décris la situation)_`;
+                                
+                                db.run('INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "assistant", ?)',
+                                    [sessionId, typeQuestion]);
+                            }
                         });
                     }
-                );
-            }
-        );
-    }
-});
-
-// GET /api/ai-chat/session/:sessionCode - Récupérer une session
-router.get('/session/:sessionCode', (req, res) => {
-    const db = req.app.locals.db;
-    const { sessionCode } = req.params;
-    
-    db.get(
-        'SELECT * FROM ai_chat_sessions WHERE session_code = ?',
-        [sessionCode],
-        (err, session) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!session) {
-                return res.status(404).json({ error: 'Session non trouvée' });
-            }
-            
-            // Récupérer les messages
-            db.all(
-                'SELECT role, content, created_at FROM ai_chat_messages WHERE session_id = ? ORDER BY created_at ASC',
-                [session.id],
-                (err, messages) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur serveur' });
-                    }
                     
-                    res.json({
-                        session,
-                        messages: messages || []
+                    res.status(201).json({
+                        sessionCode,
+                        sessionId,
+                        message: 'Session créée'
                     });
                 }
             );
@@ -99,7 +128,27 @@ router.get('/session/:sessionCode', (req, res) => {
     );
 });
 
-// POST /api/ai-chat/message - Envoyer un message et obtenir une réponse
+// GET /api/ai-chat/session/:sessionCode - Récupérer une session
+router.get('/session/:sessionCode', (req, res) => {
+    const db = req.app.locals.db;
+    const { sessionCode } = req.params;
+    
+    db.get('SELECT * FROM ai_chat_sessions WHERE session_code = ?', [sessionCode], (err, session) => {
+        if (err) return res.status(500).json({ error: 'Erreur serveur' });
+        if (!session) return res.status(404).json({ error: 'Session non trouvée' });
+        
+        db.all(
+            'SELECT role, content, created_at FROM ai_chat_messages WHERE session_id = ? ORDER BY created_at ASC',
+            [session.id],
+            (err, messages) => {
+                if (err) return res.status(500).json({ error: 'Erreur serveur' });
+                res.json({ session, messages: messages || [] });
+            }
+        );
+    });
+});
+
+// POST /api/ai-chat/message - Envoyer un message
 router.post('/message', (req, res) => {
     const db = req.app.locals.db;
     const { sessionCode, message } = req.body;
@@ -108,215 +157,353 @@ router.post('/message', (req, res) => {
         return res.status(400).json({ error: 'Message et sessionCode requis' });
     }
     
-    // Récupérer la session
-    db.get(
-        'SELECT * FROM ai_chat_sessions WHERE session_code = ?',
-        [sessionCode],
-        (err, session) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!session) {
-                return res.status(404).json({ error: 'Session non trouvée' });
-            }
-            
-            // Enregistrer le message de l'utilisateur
-            db.run(
-                'INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "user", ?)',
-                [session.id, message],
-                (err) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur enregistrement message' });
-                    }
-                    
-                    // Récupérer l'historique de la conversation
-                    db.all(
-                        'SELECT content FROM ai_chat_messages WHERE session_id = ? ORDER BY created_at ASC',
-                        [session.id],
-                        (err, history) => {
-                            if (err) {
-                                return res.status(500).json({ error: 'Erreur serveur' });
-                            }
-                            
-                            // Générer une réponse intelligente basée sur le contexte
-                            const assistantMessage = generateIntelligentResponse(message, history);
-                            
-                            // Enregistrer la réponse de l'assistant
-                            db.run(
-                                'INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "assistant", ?)',
-                                [session.id, assistantMessage],
-                                (err) => {
-                                    if (err) {
-                                        console.error('Erreur enregistrement réponse:', err);
-                                    }
-                                    
-                                    res.json({
-                                        message: assistantMessage,
-                                        sessionCode
-                                    });
-                                }
-                            );
-                        }
-                    );
-                }
-            );
+    db.get('SELECT * FROM ai_chat_sessions WHERE session_code = ?', [sessionCode], (err, session) => {
+        if (err) return res.status(500).json({ error: 'Erreur serveur' });
+        if (!session) return res.status(404).json({ error: 'Session non trouvée' });
+        
+        // Récupérer les données du signalement
+        let reportData;
+        try {
+            reportData = JSON.parse(session.report_data || '{}');
+        } catch(e) {
+            reportData = { step: STEPS.WELCOME };
         }
-    );
+        
+        // Enregistrer le message utilisateur
+        db.run('INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "user", ?)',
+            [session.id, message], (err) => {
+                if (err) return res.status(500).json({ error: 'Erreur enregistrement' });
+                
+                // Traiter le message selon l'étape
+                processMessage(db, session, reportData, message, (response, newData, reportCreated) => {
+                    // Mettre à jour les données
+                    db.run('UPDATE ai_chat_sessions SET report_data = ? WHERE id = ?',
+                        [JSON.stringify(newData), session.id]);
+                    
+                    // Enregistrer la réponse
+                    db.run('INSERT INTO ai_chat_messages (session_id, role, content) VALUES (?, "assistant", ?)',
+                        [session.id, response], (err) => {
+                            if (err) console.error('Erreur:', err);
+                            
+                            const result = { message: response, sessionCode };
+                            if (reportCreated) {
+                                result.reportCreated = true;
+                                result.trackingCode = newData.trackingCode;
+                                result.discussionCode = newData.discussionCode;
+                            }
+                            res.json(result);
+                        });
+                });
+            });
+    });
 });
 
-// Fonction pour générer une réponse intelligente basée sur l'historique
-function generateIntelligentResponse(userMessage, history) {
-    const lowerMsg = userMessage.toLowerCase();
-    const historyCount = history.length;
+// Traiter le message selon l'étape
+function processMessage(db, session, data, message, callback) {
+    const msg = message.trim();
     
-    // Analyser les mots-clés du message
-    const keywords = {
-        harcelement: /harcèl|mobbé|mobbing|bullying|bullying|exclus|isolé/i.test(userMessage),
-        violence: /violence|frappé|coup|bouffée|pou|cogn|battre|bastonné|violenté/i.test(userMessage),
-        verbal: /insulte|pédé|salaud|con|débile|connard|fat|gros|moche|nul|bete|verbal|humil|menacé|cri/i.test(userMessage),
-        vol: /vol|volé|pris|prendre|disparu|drogue|alcool|cigarette|argent|portable|sac|perte/i.test(userMessage),
-        discrimination: /discrimin|racis|sexis|religieu|origine|couleur|handicap/i.test(userMessage),
-        cyber: /cyber|internet|snapchat|instagram|facebook|whatsapp|tiktok|message|share|partag|photo/i.test(userMessage),
-        date: /hier|aujourd'hui|maintenant|semaine|mois|jour|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|\d{1,2}\/\d{1,2}/i.test(userMessage),
-        lieu: /cour|couloir|classe|toilette|vestiaire|cantine|parking|bus|stade|gymnase|route|chemin/i.test(userMessage),
-        temoin: /témoin|vu|present|y a|avait|monde|gens|copain|ami|prof|adulte/i.test(userMessage)
-    };
-    
-    // Déterminer où nous en sommes dans la conversation
-    const conversationStage = Math.floor(historyCount / 2); // Diviser par 2 car on compte les 2 messages (user + bot)
-    
-    // Réponses intelligentes basées sur la progression
-    if (conversationStage === 0) {
-        // Première réponse - identifier le type d'incident
-        if (keywords.harcelement) {
-            return "Je comprends que tu signales du harcèlement. C'est très important et courageux de ta part. Peux-tu me dire depuis combien de temps cela se produit ? Est-ce une situation récente ou cela dure depuis longtemps ?";
-        }
-        if (keywords.violence) {
-            return "Je suis désolé que tu aies vécu cela. La violence n'est jamais acceptable. Peux-tu me dire quand cet incident s'est produit ? Était-ce aujourd'hui, hier ou plus tôt cette semaine ?";
-        }
-        if (keywords.cyber) {
-            return "Le cyberharcèlement est un problème sérieux. Merci de le signaler. Peux-tu me dire sur quelle plateforme (Instagram, Snapchat, WhatsApp, etc.) cela se passe-t-il ?";
-        }
-        if (keywords.vol) {
-            return "Un vol est une situation grave. Peux-tu me dire ce qui a été volé et quand cela s'est passé ?";
-        }
-        if (keywords.discrimination) {
-            return "Malheureusement, la discrimination existe encore. Merci de le signaler. Peux-tu m'en dire un peu plus sur ce qui s'est passé ?";
-        }
-        return "Merci de faire confiance à SpeakFree. Peux-tu me donner un peu plus de détails sur ce que tu aimerais signaler ?";
-    }
-    
-    if (conversationStage === 1) {
-        // Deuxième étape - approfondir et chercher la date/heure
-        if (!keywords.date) {
-            return "Merci pour ces informations. Maintenant, dis-moi quand cela s'est passé exactement ? Est-ce aujourd'hui, hier, ou peut-être la semaine dernière ?";
-        }
-        return "D'accord. Et où exactement dans l'école cela s'est-il passé ? À la cour de récréation, au couloir, en classe, ou ailleurs ?";
-    }
-    
-    if (conversationStage === 2) {
-        // Troisième étape - localiser l'incident
-        if (!keywords.lieu) {
-            return "Peux-tu être plus précis sur le lieu ? Par exemple : à la cour pendant la récréation, dans le couloir, aux toilettes, etc. ?";
-        }
-        return "Merci. Maintenant, peux-tu me dire : y avait-il des témoins ? Des amis, d'autres élèves, ou un adulte présent ?";
-    }
-    
-    if (conversationStage === 3) {
-        // Quatrième étape - témoins et détails
-        if (lowerMsg.includes('oui') || keywords.temoin) {
-            return "C'est important d'avoir des témoins. Y a-t-il autre chose que tu aimerais que j'ajoute à ton signalement ? Des détails qui pourraient être importants ?";
-        }
-        if (lowerMsg.includes('non')) {
-            return "D'accord, même sans témoins, ton signalement est important. Y a-t-il d'autres détails que tu souhaites ajouter ?";
-        }
-        return "Je comprends. Y a-t-il d'autres détails ou informations importants que tu aimerais ajouter ?";
-    }
-    
-    if (conversationStage >= 4) {
-        // Étape finale - confirmation
-        if (userMessage.length < 20) {
-            return "Merci pour toutes ces informations. Ton signalement va maintenant être créé et transmis de façon anonyme à l'école. Tu recevras bientôt un code de suivi pour suivre ton dossier. Quelque chose d'autre à ajouter avant de finaliser ?";
-        }
-        return "Merci pour tous ces détails précis. Ton signalement est prêt à être envoyé. Cela m'a plu de t'aider. L'école va prendre les mesures nécessaires. N'oublie pas que tu peux consulter l'état de ton signalement avec le code que tu recevras.";
-    }
-    
-    // Réponse par défaut
-    return "Je comprends. Peux-tu m'en dire un peu plus sur la situation ? Plus tu me donnes de détails, mieux je pourrais t'aider.";
-}
-
-// Ancienne fonction de fallback (gardée pour compatibilité)
-function getFallbackResponse(userMessage) {
-    return generateIntelligentResponse(userMessage, []);
-}
-
-// POST /api/ai-chat/finalize - Finaliser et créer un signalement à partir du chat
-router.post('/finalize', (req, res) => {
-    const db = req.app.locals.db;
-    const { sessionCode, schoolCode } = req.body;
-    
-    // Récupérer la session et l'historique
-    db.get(
-        'SELECT * FROM ai_chat_sessions WHERE session_code = ?',
-        [sessionCode],
-        (err, session) => {
-            if (err || !session) {
-                return res.status(404).json({ error: 'Session non trouvée' });
-            }
+    switch(data.step) {
+        case STEPS.WELCOME:
+        case STEPS.SCHOOL:
+            handleSchoolStep(db, msg, data, callback);
+            break;
             
-            db.all(
-                'SELECT content FROM ai_chat_messages WHERE session_id = ? AND role = "user"',
-                [session.id],
-                (err, messages) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur serveur' });
-                    }
-                    
-                    // Concaténer tous les messages pour créer la description
-                    const fullDescription = messages.map(m => m.content).join('\n\n');
-                    
-                    // Générer les codes
-                    const trackingCode = 'RPT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-                    const discussionCode = 'DSC-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-                    
-                    // Créer le signalement
-                    db.get('SELECT id FROM schools WHERE school_code = ?', [schoolCode], (err, school) => {
-                        if (err || !school) {
-                            return res.status(404).json({ error: 'École non trouvée' });
-                        }
-                        
-                        db.run(
-                            `INSERT INTO reports (
-                                school_id, tracking_code, discussion_code, 
-                                incident_type, description, incident_date, 
-                                location, status
-                            ) VALUES (?, ?, ?, "autre", ?, date('now'), "Non spécifié", "pending")`,
-                            [school.id, trackingCode, discussionCode, fullDescription],
-                            function(err) {
-                                if (err) {
-                                    return res.status(500).json({ error: 'Erreur création signalement' });
-                                }
-                                
-                                // Marquer la session comme terminée
-                                db.run(
-                                    'UPDATE ai_chat_sessions SET status = "completed" WHERE id = ?',
-                                    [session.id]
-                                );
-                                
-                                res.json({
-                                    message: 'Signalement créé avec succès',
-                                    trackingCode,
-                                    discussionCode,
-                                    reportId: this.lastID
-                                });
-                            }
-                        );
-                    });
-                }
-            );
+        case STEPS.TYPE:
+            handleTypeStep(msg, data, callback);
+            break;
+            
+        case STEPS.DATE:
+            handleDateStep(msg, data, callback);
+            break;
+            
+        case STEPS.LOCATION:
+            handleLocationStep(msg, data, callback);
+            break;
+            
+        case STEPS.DESCRIPTION:
+            handleDescriptionStep(msg, data, callback);
+            break;
+            
+        case STEPS.WITNESSES:
+            handleWitnessesStep(msg, data, callback);
+            break;
+            
+        case STEPS.CONFIRM:
+            handleConfirmStep(db, session, msg, data, callback);
+            break;
+            
+        case STEPS.COMPLETED:
+            callback(`✅ Ton signalement a déjà été créé !
+
+📋 **Code de suivi :** \`${data.trackingCode}\`
+🔑 **Code de discussion :** \`${data.discussionCode}\`
+
+Tu peux utiliser ces codes sur la page "Discussion" pour suivre ton dossier.`, data, false);
+            break;
+            
+        default:
+            data.step = STEPS.SCHOOL;
+            callback(`Je n'ai pas compris. Quel est le **code de ton école** ? (ex: ECOLE-XXXXX)`, data, false);
+    }
+}
+
+// Étape 1: Code école
+function handleSchoolStep(db, msg, data, callback) {
+    const codeMatch = msg.match(/ECOLE-[A-Z0-9]+/i);
+    const code = codeMatch ? codeMatch[0].toUpperCase() : msg.toUpperCase();
+    
+    db.get('SELECT id, name FROM schools WHERE school_code = ? AND status = "active"', [code], (err, school) => {
+        if (school) {
+            data.schoolId = school.id;
+            data.schoolCode = code;
+            data.schoolName = school.name;
+            data.step = STEPS.TYPE;
+            
+            callback(`✅ École **${school.name}** trouvée !
+
+📌 **Quel type d'incident veux-tu signaler ?**
+
+1️⃣ Harcèlement
+2️⃣ Violence physique
+3️⃣ Violence verbale / Insultes
+4️⃣ Cyberharcèlement
+5️⃣ Vol
+6️⃣ Discrimination
+7️⃣ Drogue / Alcool
+8️⃣ Autre
+
+_(Tape le numéro ou décris simplement)_`, data, false);
+        } else {
+            callback(`❌ Je n'ai pas trouvé d'école avec ce code.
+
+Vérifie le code de ton école (format: **ECOLE-XXXXX**) et réessaie.
+
+💡 _Si tu ne connais pas le code, demande à un camarade ou consulte l'affichage de ton établissement._`, data, false);
         }
-    );
-});
+    });
+}
+
+// Étape 2: Type d'incident
+function handleTypeStep(msg, data, callback) {
+    let incidentType = '';
+    
+    if (msg === '1' || /harcèl|harcel|moqu|exclu|isol/i.test(msg)) {
+        incidentType = 'harcelement';
+    } else if (msg === '2' || /violen|frapp|coup|battu|bagarre|physi/i.test(msg)) {
+        incidentType = 'violence';
+    } else if (msg === '3' || /verbal|insult|menac|humil|moqueri/i.test(msg)) {
+        incidentType = 'verbal';
+    } else if (msg === '4' || /cyber|internet|reseaux|insta|snap|tiktok|whatsapp|facebook|message/i.test(msg)) {
+        incidentType = 'cyber';
+    } else if (msg === '5' || /vol|volé|dispar|pris|argent|portable|affaire/i.test(msg)) {
+        incidentType = 'vol';
+    } else if (msg === '6' || /discrim|racis|sexis|religio|origin|couleur/i.test(msg)) {
+        incidentType = 'discrimination';
+    } else if (msg === '7' || /drogue|alcool|cigarette|cannabis|fumer|boire/i.test(msg)) {
+        incidentType = 'drogue';
+    } else if (msg === '8' || /autre/i.test(msg)) {
+        incidentType = 'autre';
+    }
+    
+    if (incidentType) {
+        const typeLabels = {
+            'harcelement': 'Harcèlement',
+            'violence': 'Violence physique',
+            'verbal': 'Violence verbale',
+            'cyber': 'Cyberharcèlement',
+            'vol': 'Vol',
+            'discrimination': 'Discrimination',
+            'drogue': 'Drogue/Alcool',
+            'autre': 'Autre'
+        };
+        
+        data.incidentType = incidentType;
+        data.incidentTypeLabel = typeLabels[incidentType];
+        data.step = STEPS.DATE;
+        
+        callback(`📝 Type : **${typeLabels[incidentType]}**
+
+📅 **Quand cela s'est-il passé ?**
+
+_(Exemple: "hier", "lundi dernier", "il y a 2 semaines", "le 25 novembre")_`, data, false);
+    } else {
+        callback(`Je n'ai pas bien compris. Peux-tu me dire quel type d'incident tu souhaites signaler ?
+
+1️⃣ Harcèlement
+2️⃣ Violence physique
+3️⃣ Violence verbale
+4️⃣ Cyberharcèlement
+5️⃣ Vol
+6️⃣ Discrimination
+7️⃣ Drogue/Alcool
+8️⃣ Autre`, data, false);
+    }
+}
+
+// Étape 3: Date de l'incident
+function handleDateStep(msg, data, callback) {
+    if (msg.length >= 2) {
+        data.incidentDate = msg;
+        data.step = STEPS.LOCATION;
+        
+        callback(`📅 Date : **${msg}**
+
+📍 **Où cela s'est-il passé ?**
+
+_(Exemple: "dans la cour", "aux toilettes", "en classe de maths", "au couloir du 2ème étage", "sur les réseaux sociaux")_`, data, false);
+    } else {
+        callback(`Peux-tu me dire **quand** cela s'est passé ?
+
+_(Exemple: "hier matin", "la semaine dernière", "le 20 novembre")_`, data, false);
+    }
+}
+
+// Étape 4: Lieu de l'incident
+function handleLocationStep(msg, data, callback) {
+    if (msg.length >= 2) {
+        data.location = msg;
+        data.step = STEPS.DESCRIPTION;
+        
+        callback(`📍 Lieu : **${msg}**
+
+📝 **Maintenant, décris ce qui s'est passé en détail.**
+
+N'hésite pas à donner le maximum d'informations : ce qui a été dit ou fait, qui était impliqué (sans donner de vrais noms si tu préfères), comment tu t'es senti(e), etc.
+
+_(Prends ton temps, c'est important)_`, data, false);
+    } else {
+        callback(`Peux-tu me dire **où** cela s'est passé ?
+
+_(Exemple: "à la cantine", "dans le bus", "en cours d'anglais")_`, data, false);
+    }
+}
+
+// Étape 5: Description détaillée
+function handleDescriptionStep(msg, data, callback) {
+    if (msg.length >= 10) {
+        data.description = msg;
+        data.step = STEPS.WITNESSES;
+        
+        callback(`✅ Description enregistrée.
+
+👥 **Y avait-il des témoins ?**
+
+_(Réponds "oui" ou "non", ou donne des détails comme "oui, des amis" ou "un professeur était là")_`, data, false);
+    } else {
+        callback(`Ta description est un peu courte. Peux-tu donner **plus de détails** sur ce qui s'est passé ?
+
+Plus tu donnes d'informations, mieux l'école pourra t'aider.`, data, false);
+    }
+}
+
+// Étape 6: Témoins
+function handleWitnessesStep(msg, data, callback) {
+    data.witnesses = msg;
+    data.step = STEPS.CONFIRM;
+    
+    callback(`📋 **RÉCAPITULATIF DE TON SIGNALEMENT**
+
+🏫 **École :** ${data.schoolName || data.schoolCode}
+📌 **Type :** ${data.incidentTypeLabel}
+📅 **Date :** ${data.incidentDate}
+📍 **Lieu :** ${data.location}
+👥 **Témoins :** ${data.witnesses}
+
+📝 **Description :**
+${data.description}
+
+---
+
+✅ **Est-ce que tout est correct ?**
+
+Tape **OUI** pour envoyer le signalement
+Tape **NON** pour recommencer`, data, false);
+}
+
+// Étape 7: Confirmation et création du signalement
+function handleConfirmStep(db, session, msg, data, callback) {
+    const msgLower = msg.toLowerCase();
+    
+    if (msgLower === 'oui' || msgLower === 'o' || msgLower === 'yes' || msgLower === 'ok' || msgLower === 'confirmer') {
+        const trackingCode = generateTrackingCode();
+        const discussionCode = generateDiscussionCode();
+        
+        const fullDescription = `[Signalement via Chat IA Haniel]
+
+Type: ${data.incidentTypeLabel}
+Date: ${data.incidentDate}
+Lieu: ${data.location}
+Témoins: ${data.witnesses}
+
+Description:
+${data.description}`;
+        
+        db.run(
+            `INSERT INTO reports (
+                school_id, tracking_code, discussion_code,
+                incident_type, description, incident_date,
+                location, witnesses, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, date('now'), ?, ?, 'pending', datetime('now'))`,
+            [data.schoolId, trackingCode, discussionCode, data.incidentType, fullDescription, data.location, data.witnesses],
+            function(err) {
+                if (err) {
+                    console.error('Erreur création signalement:', err);
+                    callback(`❌ Une erreur s'est produite lors de la création du signalement. Réessaie plus tard.`, data, false);
+                    return;
+                }
+                
+                db.run('UPDATE ai_chat_sessions SET status = "completed" WHERE id = ?', [session.id]);
+                
+                data.step = STEPS.COMPLETED;
+                data.trackingCode = trackingCode;
+                data.discussionCode = discussionCode;
+                data.reportId = this.lastID;
+                
+                const successMessage = `🎉 **SIGNALEMENT CRÉÉ AVEC SUCCÈS !**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 **Code de suivi :**
+\`${trackingCode}\`
+
+🔑 **Code de discussion :**
+\`${discussionCode}\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ **IMPORTANT : Sauvegarde ces codes !**
+Tu en auras besoin pour :
+• Suivre l'état de ton signalement
+• Discuter avec l'école de manière anonyme
+
+📱 Pour suivre ton signalement, va sur la page **"Discussion"** et entre ces codes.
+
+---
+
+💜 Merci de ta confiance. L'école va traiter ton signalement rapidement.
+
+_Tu n'es pas seul(e). Ensemble, on peut faire changer les choses._`;
+                
+                callback(successMessage, data, true);
+            }
+        );
+    } else if (msgLower === 'non' || msgLower === 'n' || msgLower === 'no' || msgLower === 'recommencer') {
+        data.step = STEPS.TYPE;
+        callback(`D'accord, recommençons.
+
+📌 **Quel type d'incident veux-tu signaler ?**
+
+1️⃣ Harcèlement
+2️⃣ Violence physique
+3️⃣ Violence verbale
+4️⃣ Cyberharcèlement
+5️⃣ Vol
+6️⃣ Discrimination
+7️⃣ Drogue/Alcool
+8️⃣ Autre`, data, false);
+    } else {
+        callback(`Tape **OUI** pour confirmer et envoyer ton signalement, ou **NON** pour recommencer.`, data, false);
+    }
+}
 
 module.exports = router;

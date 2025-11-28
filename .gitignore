@@ -1,16 +1,44 @@
+# Dépendances
 node_modules/
+
+# Variables d'environnement (contient des secrets)
 .env
 .env.local
-.DS_Store
+.env.development
+.env.production
+
+# Base de données SQLite locale
+database/*.db
+database/*.db-journal
+
+# Logs
+logs/
 *.log
-*.sql
-.vscode/
-database/speakfree.db
-database/speakfree.db-*
-uploads/
-dist/
-build/
+npm-debug.log*
+
+# Fichiers de test/développement
+test-api.js
+clean-database.js
+seed-data.js
+reset-school.js
+
+# Dossiers temporaires
+_archive/
+frontend/
+backend/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# IDE
 .idea/
 *.swp
 *.swo
-*~
+
+# Fichiers de configuration VS Code (optionnel)
+# .vscode/
+
+# Fichiers de build
+dist/
+build/

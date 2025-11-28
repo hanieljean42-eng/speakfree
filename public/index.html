@@ -397,6 +397,13 @@
                 <p>Tu as déjà fait un signalement ? Continue la conversation avec ton école.</p>
                 <a href="/discussion.html" class="btn btn-violet" onclick="event.stopPropagation()">🔑 Entrer mes Codes</a>
             </div>
+            
+            <div class="card" id="trackingCard">
+                <div class="card-icon">🔍</div>
+                <h2>Suivre mon Signalement</h2>
+                <p>Vérifie l'état de ton signalement avec ton code de suivi.</p>
+                <button class="btn" style="background: #17a2b8;" id="openTrackingBtn">📋 Entrer mon Code</button>
+            </div>
         </div>
 
         <div class="admin-section">
@@ -471,6 +478,27 @@
             </p>
         </footer>
     </div>
+    
+    <!-- Modal Suivi Signalement -->
+    <div id="trackingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 20px; padding: 40px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; color: #333;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="color: #667eea; margin: 0;">🔍 Suivre mon Signalement</h2>
+                <button id="closeTrackingModalBtn" style="background: none; border: none; font-size: 2em; cursor: pointer; color: #999;">&times;</button>
+            </div>
+            
+            <p style="color: #666; margin-bottom: 20px;">Entre ton code de suivi pour voir l'état de ton signalement.</p>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">Code de Suivi</label>
+                <input type="text" id="trackingCodeInput" placeholder="Ex: RPT-ABC123XYZ" style="width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1.1em;">
+            </div>
+            
+            <button id="trackReportBtn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer;">🔍 Rechercher</button>
+            
+            <div id="trackingResult" style="margin-top: 25px;"></div>
+        </div>
+    </div>
 
     <!-- Configuration centralisée API - DOIT ÊTRE CHARGÉ EN PREMIER -->
     <script src="/config.js"></script>
@@ -516,6 +544,142 @@
                     element.style.transform = 'scale(1)';
                 }, 300);
             }
+        }
+        
+        // Suivi de signalement
+        document.addEventListener('DOMContentLoaded', function() {
+            const trackBtn = document.getElementById('trackReportBtn');
+            const trackInput = document.getElementById('trackingCodeInput');
+            const trackingModal = document.getElementById('trackingModal');
+            const openTrackingBtn = document.getElementById('openTrackingBtn');
+            const trackingCard = document.getElementById('trackingCard');
+            
+            // Fonction pour ouvrir le modal
+            function openTrackingModal() {
+                console.log('[INDEX] Ouverture modal suivi');
+                if (trackingModal) {
+                    trackingModal.style.display = 'flex';
+                }
+            }
+            
+            // Bouton dans la carte
+            if (openTrackingBtn) {
+                openTrackingBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openTrackingModal();
+                });
+                console.log('[INDEX] Bouton suivi attaché');
+            }
+            
+            // Carte cliquable
+            if (trackingCard) {
+                trackingCard.addEventListener('click', function(e) {
+                    if (!e.target.closest('button')) {
+                        openTrackingModal();
+                    }
+                });
+            }
+            
+            // Bouton rechercher dans le modal
+            if (trackBtn) {
+                trackBtn.addEventListener('click', trackReport);
+            }
+            
+            if (trackInput) {
+                trackInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') trackReport();
+                });
+            }
+            
+            // Fermer modal en cliquant dehors
+            if (trackingModal) {
+                trackingModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                        document.getElementById('trackingResult').innerHTML = '';
+                    }
+                });
+            }
+            
+            // Bouton fermer modal (X)
+            const closeTrackingBtn = document.getElementById('closeTrackingModalBtn');
+            if (closeTrackingBtn) {
+                closeTrackingBtn.addEventListener('click', function() {
+                    document.getElementById('trackingModal').style.display = 'none';
+                    document.getElementById('trackingResult').innerHTML = '';
+                });
+            }
+        });
+        
+        function trackReport() {
+            const code = document.getElementById('trackingCodeInput').value.trim();
+            const resultDiv = document.getElementById('trackingResult');
+            
+            if (!code) {
+                resultDiv.innerHTML = '<div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 10px;">⚠️ Veuillez entrer un code de suivi.</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div><p style="margin-top: 15px; color: #666;">Recherche en cours...</p></div>';
+            
+            fetch(CONFIG.API_URL + '/api/reports/track/' + encodeURIComponent(code))
+            .then(res => {
+                if (!res.ok) throw new Error('Signalement non trouvé');
+                return res.json();
+            })
+            .then(data => {
+                const statusInfo = {
+                    'pending': { icon: '⏳', text: 'En attente de traitement', color: '#ffc107', bgColor: '#fff3cd' },
+                    'in-progress': { icon: '🔄', text: 'En cours de traitement', color: '#17a2b8', bgColor: '#d1ecf1' },
+                    'resolved': { icon: '✅', text: 'Résolu', color: '#28a745', bgColor: '#d4edda' }
+                };
+                
+                const status = statusInfo[data.status] || statusInfo['pending'];
+                const date = new Date(data.created_at).toLocaleDateString('fr-FR');
+                
+                resultDiv.innerHTML = `
+                    <div style="background: #f8f9fa; border-radius: 15px; padding: 25px; border-left: 5px solid ${status.color};">
+                        <h3 style="color: #667eea; margin-bottom: 20px;">📋 Signalement trouvé !</h3>
+                        
+                        <div style="background: ${status.bgColor}; color: ${status.color}; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 3em; margin-bottom: 10px;">${status.icon}</div>
+                            <div style="font-size: 1.3em; font-weight: bold;">${status.text}</div>
+                        </div>
+                        
+                        <div style="display: grid; gap: 15px;">
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                                <span style="color: #666; font-weight: 600;">📋 Code de suivi</span>
+                                <span style="color: #333;">${data.tracking_code}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                                <span style="color: #666; font-weight: 600;">🏫 École</span>
+                                <span style="color: #333;">${data.school_name}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                                <span style="color: #666; font-weight: 600;">📌 Type</span>
+                                <span style="color: #333;">${data.incident_type}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                                <span style="color: #666; font-weight: 600;">📅 Date du signalement</span>
+                                <span style="color: #333;">${date}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 10px 0;">
+                                <span style="color: #666; font-weight: 600;">📍 Lieu</span>
+                                <span style="color: #333;">${data.location}</span>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+                            <p style="color: #666; font-size: 0.95em;">💡 <strong>Conseil :</strong> Pour discuter avec l'école, utilise ton <strong>code de discussion</strong> sur la page <a href="/discussion.html" style="color: #667eea;">Discussion</a>.</p>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(err => {
+                console.error('Erreur tracking:', err);
+                resultDiv.innerHTML = '<div style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 10px; text-align: center;"><div style="font-size: 3em; margin-bottom: 10px;">❌</div><strong>Signalement non trouvé</strong><p style="margin-top: 10px;">Vérifie ton code de suivi et réessaye.</p></div>';
+            });
         }
     </script>
 </body>

@@ -451,9 +451,8 @@
                     class="chat-input" 
                     id="messageInput" 
                     placeholder="Écris ton message..."
-                    onkeypress="if(event.key === 'Enter') sendMessage()"
                 >
-                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                <button class="send-btn" id="sendBtn">
                     Envoyer 📤
                 </button>
             </div>
@@ -466,29 +465,93 @@
     <script>
         let discussionData = null;
 
+        // Attendre le chargement complet
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[DISCUSSION] Page chargée');
+            
+            // Vérifier config.js
+            if (typeof CONFIG === 'undefined') {
+                console.error('[DISCUSSION] CONFIG non défini!');
+                alert('Erreur de configuration. Rafraîchis la page.');
+                return;
+            }
+            
+            // Attacher les événements
+            attachEvents();
+        });
+        
+        function attachEvents() {
+            // Formulaire de connexion
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+                console.log('[DISCUSSION] Formulaire login attaché');
+            }
+            
+            // Bouton Envoyer
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('[DISCUSSION] Clic sur Envoyer');
+                    sendMessage();
+                });
+                console.log('[DISCUSSION] Bouton Envoyer attaché');
+            }
+            
+            // Touche Entrée sur l'input
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        console.log('[DISCUSSION] Touche Entrée');
+                        sendMessage();
+                    }
+                });
+            }
+        }
+
         // Connexion à la discussion
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        function handleLogin(e) {
             e.preventDefault();
 
             const code = document.getElementById('discussionCode').value.trim();
             const loginBtn = document.getElementById('loginBtn');
 
+            if (!code) {
+                alert('Veuillez entrer le code de discussion.');
+                return;
+            }
+
             loginBtn.disabled = true;
             loginBtn.textContent = '⏳ Connexion...';
+            
+            console.log('[DISCUSSION] Tentative connexion avec code:', code);
 
             // Appel API pour vérifier le code
-            apiCall(`/api/discussions/${code}`)
-                .then(data => {
-                    // Charger la discussion
-                    loadDiscussion(data);
-                })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    alert('❌ Code invalide ou erreur. Vérifie ton code d\'accès.');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = '🚀 Accéder à la Discussion';
-                });
-        });
+            fetch(CONFIG.API_URL + '/api/discussions/' + encodeURIComponent(code), {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Code invalide');
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('[DISCUSSION] Données reçues:', data);
+                // Charger la discussion
+                loadDiscussion(data);
+            })
+            .catch(error => {
+                console.error('[DISCUSSION] Erreur:', error);
+                alert('❌ Code invalide ou erreur. Vérifie ton code d\'accès.');
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🚀 Accéder à la Discussion';
+            });
+        }
 
         function loadDiscussion(data) {
             discussionData = data;
@@ -498,52 +561,79 @@
             document.getElementById('chatContainer').classList.add('active');
 
             // Remplir les informations
-            document.getElementById('trackingCode').textContent = data.report.trackingCode;
-            document.getElementById('creationDate').textContent = new Date(data.report.createdAt).toLocaleDateString('fr-FR');
-            document.getElementById('incidentType').textContent = data.report.incidentType;
+            document.getElementById('trackingCode').textContent = data.report.trackingCode || data.report.tracking_code;
+            document.getElementById('creationDate').textContent = new Date(data.report.createdAt || data.report.created_at).toLocaleDateString('fr-FR');
+            document.getElementById('incidentType').textContent = data.report.incidentType || data.report.incident_type;
 
             // Charger les messages
-            data.messages.forEach(msg => {
-                addMessage(msg.sender_type === 'school' ? 'school' : 'student', msg.message, new Date(msg.created_at).toLocaleString('fr-FR'));
-            });
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    addMessage(msg.sender_type === 'school' ? 'school' : 'student', msg.message, new Date(msg.created_at).toLocaleString('fr-FR'));
+                });
+            }
 
             // Focus sur l'input
             document.getElementById('messageInput').focus();
+            
+            console.log('[DISCUSSION] Discussion chargée');
         }
 
         function sendMessage() {
             const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
             const message = input.value.trim();
             
-            if (!message) return;
+            console.log('[DISCUSSION] sendMessage appelé, message:', message);
+            
+            if (!message) {
+                console.log('[DISCUSSION] Message vide');
+                return;
+            }
+            
+            if (!discussionData || !discussionData.report) {
+                console.error('[DISCUSSION] Pas de données de discussion');
+                alert('Erreur: Aucune discussion active.');
+                return;
+            }
 
             // Désactiver temporairement
             input.disabled = true;
-            document.getElementById('sendBtn').disabled = true;
+            sendBtn.disabled = true;
+            
+            const discussionCode = discussionData.report.discussionCode || discussionData.report.discussion_code;
+            console.log('[DISCUSSION] Envoi au code:', discussionCode);
 
             // Envoyer au backend
-            apiCall(`/api/discussions/${discussionData.report.discussionCode}/message`, {
+            fetch(CONFIG.API_URL + '/api/discussions/' + encodeURIComponent(discussionCode) + '/message', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: message,
                     senderType: 'student'
                 })
             })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Erreur envoi');
+                }
+                return res.json();
+            })
             .then(data => {
+                console.log('[DISCUSSION] Message envoyé:', data);
                 // Ajouter le message à l'interface
                 addMessage('student', message, 'À l\'instant');
                 input.value = '';
                 
                 // Réactiver
                 input.disabled = false;
-                document.getElementById('sendBtn').disabled = false;
+                sendBtn.disabled = false;
                 input.focus();
             })
             .catch(error => {
-                console.error('Erreur:', error);
-                alert('❌ Erreur d\'envoi: ' + (error.message || 'Réessaye.'));
+                console.error('[DISCUSSION] Erreur envoi:', error);
+                alert('❌ Erreur d\'envoi. Réessaye.');
                 input.disabled = false;
-                document.getElementById('sendBtn').disabled = false;
+                sendBtn.disabled = false;
             });
         }
 
@@ -570,6 +660,8 @@
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
+        
+        console.log('[DISCUSSION] Script chargé');
     </script>
 </body>
 </html>

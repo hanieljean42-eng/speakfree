@@ -1210,7 +1210,8 @@ function viewReportDetails(reportId) {
                     <button type="submit" class="action-btn-primary">📤 Envoyer</button>
                 </form>
             </div>
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef;">
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e9ecef; display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn" style="background: #28a745; color: white; padding: 12px 25px; font-size: 1em;" id="resolveReportBtn" data-id="${report.id}">✅ Confirmer la Résolution</button>
                 <button class="btn btn-delete" id="deleteReportBtn" data-id="${report.id}">🗑️ Supprimer ce signalement</button>
             </div>
         `;
@@ -1256,6 +1257,41 @@ function attachModalEvents(reportId) {
             deleteReport(reportId);
         });
     }
+    
+    // Bouton confirmer résolution
+    const resolveBtn = document.getElementById('resolveReportBtn');
+    if (resolveBtn) {
+        resolveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('[ADMIN] Confirmer résolution');
+            confirmResolution(reportId);
+        });
+    }
+}
+
+// CONFIRMER LA RÉSOLUTION
+function confirmResolution(reportId) {
+    if (!confirm('✅ Confirmer que ce signalement est résolu ?\n\nL\'élève pourra voir que son signalement a été traité.')) return;
+    
+    fetch(CONFIG.API_URL + '/api/admin/reports/' + reportId + '/status', {
+        method: 'PATCH',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'resolved' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('[ADMIN] Résolution confirmée:', data);
+        alert('✅ Signalement marqué comme RÉSOLU !\n\nL\'élève peut maintenant voir que son dossier a été traité.');
+        closeModal('reportModal');
+        refreshData();
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        alert('❌ Erreur: ' + err.message);
+    });
 }
 
 // METTRE À JOUR STATUT

@@ -348,15 +348,15 @@
                 <h2 style="margin-bottom: 10px;">📊 Statistiques Globales</h2>
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-number">12</div>
+                        <div class="stat-number" id="statSchools">0</div>
                         <div class="stat-label">Écoles Actives</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">5</div>
+                        <div class="stat-number" id="statCities">0</div>
                         <div class="stat-label">Villes Couvertes</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">248</div>
+                        <div class="stat-number" id="statReports">0</div>
                         <div class="stat-label">Signalements Traités</div>
                     </div>
                 </div>
@@ -368,117 +368,14 @@
                     class="search-input" 
                     id="searchInput" 
                     placeholder="🔍 Rechercher une école (nom, ville, code)..."
-                    onkeyup="filterSchools()"
                 >
             </div>
 
             <div class="schools-grid" id="schoolsGrid">
-                <!-- Lycée Victor Hugo -->
-                <div class="school-card" data-name="Lycée Victor Hugo" data-city="Abidjan" data-code="ECOLE-VH2024">
-                    <div class="school-icon">🏫</div>
-                    <div class="school-name">Lycée Victor Hugo</div>
-                    <div class="school-code">Code: ECOLE-VH2024</div>
-                    <div class="school-info">
-                        <span>📍</span>
-                        <span>Abidjan, Cocody</span>
-                    </div>
-                    <div class="school-info">
-                        <span>📊</span>
-                        <span>24 signalements traités</span>
-                    </div>
-                    <div class="school-info">
-                        <span>👥</span>
-                        <span>~800 élèves</span>
-                    </div>
-                    <div class="school-actions">
-                        <button class="action-btn btn-report" onclick="goToReport('ECOLE-VH2024')">
-                            📝 Signaler
-                        </button>
-                        <button class="action-btn btn-chat" onclick="goToChat('ECOLE-VH2024')">
-                            🤖 Haniel
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Collège Sainte Marie -->
-                <div class="school-card" data-name="Collège Sainte Marie" data-city="Yamoussoukro" data-code="ECOLE-SM2024">
-                    <div class="school-icon">🏫</div>
-                    <div class="school-name">Collège Sainte Marie</div>
-                    <div class="school-code">Code: ECOLE-SM2024</div>
-                    <div class="school-info">
-                        <span>📍</span>
-                        <span>Yamoussoukro</span>
-                    </div>
-                    <div class="school-info">
-                        <span>📊</span>
-                        <span>18 signalements traités</span>
-                    </div>
-                    <div class="school-info">
-                        <span>👥</span>
-                        <span>~600 élèves</span>
-                    </div>
-                    <div class="school-actions">
-                        <button class="action-btn btn-report" onclick="goToReport('ECOLE-SM2024')">
-                            📝 Signaler
-                        </button>
-                        <button class="action-btn btn-chat" onclick="goToChat('ECOLE-SM2024')">
-                            🤖 Haniel
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Lycée Moderne -->
-                <div class="school-card" data-name="Lycée Moderne" data-city="Bouaké" data-code="ECOLE-LM2024">
-                    <div class="school-icon">🏫</div>
-                    <div class="school-name">Lycée Moderne</div>
-                    <div class="school-code">Code: ECOLE-LM2024</div>
-                    <div class="school-info">
-                        <span>📍</span>
-                        <span>Bouaké</span>
-                    </div>
-                    <div class="school-info">
-                        <span>📊</span>
-                        <span>15 signalements traités</span>
-                    </div>
-                    <div class="school-info">
-                        <span>👥</span>
-                        <span>~1000 élèves</span>
-                    </div>
-                    <div class="school-actions">
-                        <button class="action-btn btn-report" onclick="goToReport('ECOLE-LM2024')">
-                            📝 Signaler
-                        </button>
-                        <button class="action-btn btn-chat" onclick="goToChat('ECOLE-LM2024')">
-                            🤖 Haniel
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Collège Excellence -->
-                <div class="school-card" data-name="Collège Excellence" data-city="Abidjan" data-code="ECOLE-CE2024">
-                    <div class="school-icon">🏫</div>
-                    <div class="school-name">Collège Excellence</div>
-                    <div class="school-code">Code: ECOLE-CE2024</div>
-                    <div class="school-info">
-                        <span>📍</span>
-                        <span>Abidjan, Plateau</span>
-                    </div>
-                    <div class="school-info">
-                        <span>📊</span>
-                        <span>12 signalements traités</span>
-                    </div>
-                    <div class="school-info">
-                        <span>👥</span>
-                        <span>~450 élèves</span>
-                    </div>
-                    <div class="school-actions">
-                        <button class="action-btn btn-report" onclick="goToReport('ECOLE-CE2024')">
-                            📝 Signaler
-                        </button>
-                        <button class="action-btn btn-chat" onclick="goToChat('ECOLE-CE2024')">
-                            🤖 Haniel
-                        </button>
-                    </div>
+                <!-- Les écoles seront chargées dynamiquement depuis la base de données -->
+                <div class="empty-state" id="loadingState">
+                    <div class="icon">⏳</div>
+                    <h2>Chargement des écoles...</h2>
                 </div>
             </div>
 
@@ -493,52 +390,186 @@
 
     <script>
         const ACCESS_PASSWORD = '200700';
+        let allSchools = [];
 
-        // Connexion
-        document.getElementById('accessForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const password = document.getElementById('accessPassword').value;
-            
-            if (password === ACCESS_PASSWORD) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('directory').classList.add('active');
-            } else {
-                alert('❌ Mot de passe incorrect !');
-                document.getElementById('accessPassword').value = '';
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Connexion
+            document.getElementById('accessForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const password = document.getElementById('accessPassword').value;
+                
+                if (password === ACCESS_PASSWORD) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('directory').classList.add('active');
+                    // Charger les écoles depuis la base de données
+                    loadSchools();
+                    loadGlobalStats();
+                } else {
+                    alert('❌ Mot de passe incorrect !');
+                    document.getElementById('accessPassword').value = '';
+                }
+            });
+
+            // Recherche
+            document.getElementById('searchInput').addEventListener('keyup', filterSchools);
         });
+
+        // Charger les statistiques globales
+        async function loadGlobalStats() {
+            try {
+                const response = await fetch('/api/schools/stats/global');
+                const data = await response.json();
+                
+                document.getElementById('statSchools').textContent = data.schools || 0;
+                document.getElementById('statReports').textContent = data.reports || 0;
+                
+                // Calculer les villes uniques à partir des écoles chargées
+                // (sera mis à jour après le chargement des écoles)
+            } catch (error) {
+                console.error('Erreur chargement stats:', error);
+            }
+        }
+
+        // Charger les écoles depuis la base de données
+        async function loadSchools() {
+            const grid = document.getElementById('schoolsGrid');
+            
+            try {
+                const response = await fetch('/api/schools/list');
+                const data = await response.json();
+                
+                allSchools = data.schools || [];
+                
+                // Calculer les villes uniques
+                const uniqueCities = [...new Set(allSchools.map(s => s.city).filter(c => c))];
+                document.getElementById('statCities').textContent = uniqueCities.length;
+                
+                if (allSchools.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">🏫</div>
+                            <h2>Aucune école inscrite</h2>
+                            <p>Aucun établissement n'est encore inscrit sur SpeakFree.</p>
+                            <p style="margin-top: 15px;">
+                                <a href="/register-school.html" style="color: #667eea;">Inscrivez le premier établissement !</a>
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Afficher les écoles
+                renderSchools(allSchools);
+                
+            } catch (error) {
+                console.error('Erreur chargement écoles:', error);
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">❌</div>
+                        <h2>Erreur de chargement</h2>
+                        <p>Impossible de charger la liste des écoles.</p>
+                        <button class="btn" style="margin-top: 15px; width: auto; padding: 10px 30px;" onclick="loadSchools()">
+                            🔄 Réessayer
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Afficher les écoles
+        function renderSchools(schools) {
+            const grid = document.getElementById('schoolsGrid');
+            
+            if (schools.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <h2>Aucun résultat</h2>
+                        <p>Aucune école ne correspond à votre recherche.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = schools.map(school => `
+                <div class="school-card" data-name="${school.name}" data-city="${school.city || ''}" data-code="${school.school_code}">
+                    <div class="school-icon">🏫</div>
+                    <div class="school-name">${school.name}</div>
+                    <div class="school-code">Code: ${school.school_code}</div>
+                    <div class="school-info">
+                        <span>📍</span>
+                        <span>${school.city || 'Ville non spécifiée'}${school.district ? ', ' + school.district : ''}</span>
+                    </div>
+                    <div class="school-info">
+                        <span>📊</span>
+                        <span>${school.reportsCount || 0} signalement(s) reçu(s)</span>
+                    </div>
+                    ${school.student_count ? `
+                    <div class="school-info">
+                        <span>👥</span>
+                        <span>~${school.student_count} élèves</span>
+                    </div>
+                    ` : ''}
+                    <div class="school-info">
+                        <span>📅</span>
+                        <span>Inscrit le ${new Date(school.created_at).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    <div class="school-actions">
+                        <button class="action-btn btn-report" data-code="${school.school_code}">
+                            📝 Signaler
+                        </button>
+                        <button class="action-btn btn-chat" data-code="${school.school_code}">
+                            🤖 Haniel
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Ajouter les event listeners aux boutons
+            grid.querySelectorAll('.btn-report').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    goToReport(this.dataset.code);
+                });
+            });
+            
+            grid.querySelectorAll('.btn-chat').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    goToChat(this.dataset.code);
+                });
+            });
+        }
 
         // Filtrer les écoles
         function filterSchools() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const cards = document.querySelectorAll('.school-card');
             
-            cards.forEach(card => {
-                const name = card.dataset.name.toLowerCase();
-                const city = card.dataset.city.toLowerCase();
-                const code = card.dataset.code.toLowerCase();
+            if (!searchTerm) {
+                renderSchools(allSchools);
+                return;
+            }
+            
+            const filtered = allSchools.filter(school => {
+                const name = (school.name || '').toLowerCase();
+                const city = (school.city || '').toLowerCase();
+                const code = (school.school_code || '').toLowerCase();
                 
-                if (name.includes(searchTerm) || city.includes(searchTerm) || code.includes(searchTerm)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+                return name.includes(searchTerm) || city.includes(searchTerm) || code.includes(searchTerm);
             });
+            
+            renderSchools(filtered);
         }
 
         // Aller au formulaire de signalement
         function goToReport(schoolCode) {
-            // Sauvegarder le code école
             localStorage.setItem('selectedSchoolCode', schoolCode);
-            window.location.href = '/report';
+            window.location.href = '/report.html';
         }
 
         // Aller au chat Haniel
         function goToChat(schoolCode) {
-            // Sauvegarder le code école
             localStorage.setItem('selectedSchoolCode', schoolCode);
-            window.location.href = '/chat-ia';
+            window.location.href = '/chat-ia.html';
         }
     </script>
 </body>

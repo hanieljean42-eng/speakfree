@@ -101,9 +101,15 @@ function initDatabase() {
             session_code TEXT UNIQUE NOT NULL,
             school_id INTEGER,
             status TEXT DEFAULT 'active',
+            report_data TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (school_id) REFERENCES schools(id)
         )`);
+        
+        // Ajouter la colonne report_data si elle n'existe pas (migration)
+        db.run(`ALTER TABLE ai_chat_sessions ADD COLUMN report_data TEXT`, (err) => {
+            // Ignorer l'erreur si la colonne existe déjà
+        });
 
         // Table des messages chat IA
         db.run(`CREATE TABLE IF NOT EXISTS ai_chat_messages (

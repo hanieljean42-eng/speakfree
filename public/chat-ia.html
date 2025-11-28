@@ -329,15 +329,8 @@
             </div>
 
             <div class="messages-container" id="messagesContainer">
-                <div class="message bot">
-                    <div class="message-avatar">🤖</div>
-                    <div class="message-content">
-                        Bonjour ! Je suis Haniel, ton assistant virtuel SpeakFree. Je suis là pour t'aider à signaler un incident de manière simple et anonyme. 
-                        <br><br>
-                        Pour commencer, peux-tu me dire quel type de situation tu souhaites signaler ? (harcèlement, violence, vol, discrimination, autre...)
-                    </div>
-                </div>
-                <div class="message bot typing-indicator" id="typingIndicator">
+                <!-- Les messages seront ajoutés dynamiquement -->
+                <div class="message bot typing-indicator" id="typingIndicator" style="display: none;">
                     <div class="message-avatar">🤖</div>
                     <div class="message-content">
                         <span></span>
@@ -449,6 +442,9 @@
                     document.getElementById('sessionCode').textContent = sessionCode;
                     
                     console.log('[CHAT] Session active:', sessionCode);
+                    
+                    // Charger les messages de la session
+                    loadMessages();
                 } else if (data.error) {
                     console.error('[CHAT] Erreur:', data.error);
                     addMessage('bot', '❌ Erreur: ' + data.error);
@@ -457,6 +453,25 @@
             .catch(err => {
                 console.error('[CHAT] Erreur création session:', err);
                 addMessage('bot', '❌ Impossible de créer la session. Vérifie ta connexion.');
+            });
+        }
+        
+        // Charger les messages existants
+        function loadMessages() {
+            if (!sessionCode) return;
+            
+            fetch(CONFIG.API_URL + '/api/ai-chat/session/' + sessionCode)
+            .then(res => res.json())
+            .then(data => {
+                console.log('[CHAT] Messages chargés:', data);
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        addMessage(msg.role === 'assistant' ? 'bot' : 'user', msg.content);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('[CHAT] Erreur chargement messages:', err);
             });
         }
 
@@ -540,7 +555,16 @@
             
             const content = document.createElement('div');
             content.className = 'message-content';
-            content.innerHTML = text.replace(/\n/g, '<br>');
+            
+            // Formater le texte (Markdown simple)
+            let formatted = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **gras**
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')             // *italique*
+                .replace(/`(.*?)`/g, '<code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;color:#333;">$1</code>') // `code`
+                .replace(/_(.*?)_/g, '<em>$1</em>')               // _italique_
+                .replace(/\n/g, '<br>');                          // retours à la ligne
+            
+            content.innerHTML = formatted;
             
             div.appendChild(avatar);
             div.appendChild(content);
