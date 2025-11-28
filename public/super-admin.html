@@ -515,13 +515,74 @@
             console.log('[EVENTS] Événements attachés avec succès');
         }
 
+        // Formater le numéro de téléphone pour WhatsApp (format international)
+        function formatPhoneForWhatsApp(phone) {
+            // Supprimer tous les caractères non numériques sauf le +
+            let cleaned = phone.replace(/[^\d+]/g, '');
+            
+            // Si le numéro commence par 0, le remplacer par l'indicatif Côte d'Ivoire
+            if (cleaned.startsWith('0')) {
+                cleaned = '225' + cleaned.substring(1);
+            }
+            
+            // Supprimer le + s'il existe (WhatsApp n'en a pas besoin)
+            cleaned = cleaned.replace('+', '');
+            
+            // Si pas d'indicatif pays, ajouter celui de la Côte d'Ivoire
+            if (cleaned.length <= 10) {
+                cleaned = '225' + cleaned;
+            }
+            
+            return cleaned;
+        }
+
+        // Ouvrir WhatsApp avec le message des identifiants
+        function sendWhatsAppMessage(phone, schoolName, schoolCode, password, email) {
+            const formattedPhone = formatPhoneForWhatsApp(phone);
+            
+            const message = `🎉 *Bienvenue sur SpeakFree !*
+
+Votre école *${schoolName}* a été approuvée avec succès !
+
+📋 *Vos identifiants de connexion :*
+━━━━━━━━━━━━━━━━━━━━━
+🏫 Code École : *${schoolCode}*
+📧 Email : *${email}*
+🔑 Mot de passe : *${password}*
+━━━━━━━━━━━━━━━━━━━━━
+
+🔗 *Lien de connexion :*
+${window.location.origin}/login
+
+⚠️ *Important :*
+- Gardez ces informations confidentielles
+- Changez votre mot de passe dès la première connexion
+- Contactez-nous en cas de problème
+
+Merci de faire confiance à SpeakFree ! 🙏
+L'équipe SpeakFree`;
+
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+            
+            console.log('[WHATSAPP] Ouverture:', whatsappUrl);
+            window.open(whatsappUrl, '_blank');
+        }
+
         // Gérer l'approbation d'une école
         function handleApproveSchool(school) {
             console.log('[APPROVE] Approbation école:', school.name, 'ID:', school.id);
+            console.log('[APPROVE] Téléphone:', school.phone);
+            console.log('[APPROVE] Email:', school.email);
             
-            const password = prompt('Mot de passe pour l\'école (laisser vide = auto):', '');
+            const password = prompt('Définissez le mot de passe pour l\'école ' + school.name + ':', '');
             if (password === null) {
                 console.log('[APPROVE] Annulé par l\'utilisateur');
+                return;
+            }
+            
+            if (!password || password.length < 4) {
+                alert('⚠️ Le mot de passe doit contenir au moins 4 caractères');
                 return;
             }
             
@@ -533,7 +594,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     code: '200700',
-                    defaultPassword: password || undefined
+                    defaultPassword: password
                 })
             })
             .then(response => {
@@ -545,7 +606,27 @@
                 if (data.error) {
                     alert('❌ Erreur: ' + data.error);
                 } else {
-                    alert('✅ École approuvée!\n\nCode: ' + data.schoolCode + '\nMot de passe: ' + (data.defaultPassword || password || 'généré'));
+                    // Afficher la confirmation
+                    alert('✅ École approuvée avec succès!\n\n' +
+                          '📋 Informations:\n' +
+                          '━━━━━━━━━━━━━━━━\n' +
+                          '🏫 École: ' + school.name + '\n' +
+                          '🔑 Code: ' + data.schoolCode + '\n' +
+                          '📧 Email: ' + school.email + '\n' +
+                          '🔐 Mot de passe: ' + password + '\n' +
+                          '━━━━━━━━━━━━━━━━\n\n' +
+                          '📱 WhatsApp va s\'ouvrir pour envoyer les identifiants...');
+                    
+                    // Envoyer par WhatsApp
+                    sendWhatsAppMessage(
+                        school.phone,
+                        school.name,
+                        data.schoolCode,
+                        password,
+                        school.email
+                    );
+                    
+                    // Recharger les données
                     loadPendingSchools();
                     loadActiveSchools();
                     loadStatistics();
