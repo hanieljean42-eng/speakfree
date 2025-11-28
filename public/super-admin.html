@@ -517,6 +517,8 @@
 
         // Formater le numéro de téléphone pour WhatsApp (format international)
         function formatPhoneForWhatsApp(phone) {
+            if (!phone) return '';
+            
             // Supprimer tous les caractères non numériques sauf le +
             let cleaned = phone.replace(/[^\d+]/g, '');
             
@@ -528,17 +530,31 @@
             // Supprimer le + s'il existe (WhatsApp n'en a pas besoin)
             cleaned = cleaned.replace('+', '');
             
-            // Si pas d'indicatif pays, ajouter celui de la Côte d'Ivoire
+            // Si pas d'indicatif pays (moins de 11 chiffres), ajouter celui de la Côte d'Ivoire
             if (cleaned.length <= 10) {
                 cleaned = '225' + cleaned;
             }
             
+            console.log('[WHATSAPP] Numéro formaté:', phone, '->', cleaned);
             return cleaned;
         }
 
         // Ouvrir WhatsApp avec le message des identifiants
         function sendWhatsAppMessage(phone, schoolName, schoolCode, password, email) {
+            console.log('[WHATSAPP] Préparation du message...');
+            console.log('[WHATSAPP] Téléphone original:', phone);
+            
+            if (!phone) {
+                alert('⚠️ Numéro de téléphone non disponible. Envoi WhatsApp impossible.');
+                return;
+            }
+            
             const formattedPhone = formatPhoneForWhatsApp(phone);
+            
+            if (!formattedPhone) {
+                alert('⚠️ Format de numéro invalide. Envoi WhatsApp impossible.');
+                return;
+            }
             
             const message = `🎉 *Bienvenue sur SpeakFree !*
 
@@ -565,8 +581,30 @@ L'équipe SpeakFree`;
             const encodedMessage = encodeURIComponent(message);
             const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
             
-            console.log('[WHATSAPP] Ouverture:', whatsappUrl);
-            window.open(whatsappUrl, '_blank');
+            console.log('[WHATSAPP] URL générée:', whatsappUrl);
+            
+            // Demander confirmation avant d'ouvrir WhatsApp
+            const confirmSend = confirm(
+                '📱 Ouvrir WhatsApp pour envoyer les identifiants ?\n\n' +
+                '📞 Numéro: ' + phone + '\n' +
+                '🏫 École: ' + schoolName
+            );
+            
+            if (confirmSend) {
+                // Créer un lien temporaire et cliquer dessus (évite les blocages de popup)
+                const link = document.createElement('a');
+                link.href = whatsappUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('[WHATSAPP] Lien cliqué');
+            } else {
+                // Afficher le message pour copie manuelle
+                alert('📋 Message à envoyer manuellement :\n\n' + message);
+            }
         }
 
         // Gérer l'approbation d'une école
