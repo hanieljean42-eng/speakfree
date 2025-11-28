@@ -468,6 +468,136 @@
     <script>
         const SUPER_ADMIN_CODE = '200700';
 
+        // Fonction pour échapper les caractères HTML
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Attacher les événements aux boutons des écoles en attente
+        function attachPendingSchoolEvents() {
+            console.log('[EVENTS] Attachement des événements aux boutons...');
+            
+            // Boutons Approuver
+            document.querySelectorAll('button[data-action="approve"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const schoolId = parseInt(this.getAttribute('data-id'));
+                    console.log('[CLICK] Bouton Approuver cliqué, schoolId:', schoolId);
+                    const school = window.pendingSchoolsData[schoolId];
+                    if (school) {
+                        handleApproveSchool(school);
+                    } else {
+                        alert('Erreur: données école non trouvées');
+                    }
+                });
+            });
+            
+            // Boutons Rejeter
+            document.querySelectorAll('button[data-action="reject"]').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const schoolId = parseInt(this.getAttribute('data-id'));
+                    console.log('[CLICK] Bouton Rejeter cliqué, schoolId:', schoolId);
+                    const school = window.pendingSchoolsData[schoolId];
+                    if (school) {
+                        handleRejectSchool(school);
+                    } else {
+                        alert('Erreur: données école non trouvées');
+                    }
+                });
+            });
+            
+            console.log('[EVENTS] Événements attachés avec succès');
+        }
+
+        // Gérer l'approbation d'une école
+        function handleApproveSchool(school) {
+            console.log('[APPROVE] Approbation école:', school.name, 'ID:', school.id);
+            
+            const password = prompt('Mot de passe pour l\'école (laisser vide = auto):', '');
+            if (password === null) {
+                console.log('[APPROVE] Annulé par l\'utilisateur');
+                return;
+            }
+            
+            const endpoint = `/api/super-admin/schools/${school.id}/approve`;
+            console.log('[APPROVE] Envoi vers:', endpoint);
+            
+            fetch(CONFIG.API_URL + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: '200700',
+                    defaultPassword: password || undefined
+                })
+            })
+            .then(response => {
+                console.log('[APPROVE] Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('[APPROVE] Réponse:', data);
+                if (data.error) {
+                    alert('❌ Erreur: ' + data.error);
+                } else {
+                    alert('✅ École approuvée!\n\nCode: ' + data.schoolCode + '\nMot de passe: ' + (data.defaultPassword || password || 'généré'));
+                    loadPendingSchools();
+                    loadActiveSchools();
+                    loadStatistics();
+                }
+            })
+            .catch(err => {
+                console.error('[APPROVE] ERREUR:', err);
+                alert('❌ Erreur: ' + err.message);
+            });
+        }
+
+        // Gérer le rejet d'une école
+        function handleRejectSchool(school) {
+            console.log('[REJECT] Rejet école:', school.name, 'ID:', school.id);
+            
+            const reason = prompt('Raison du rejet:', '');
+            if (reason === null) {
+                console.log('[REJECT] Annulé par l\'utilisateur');
+                return;
+            }
+            
+            const endpoint = `/api/super-admin/schools/${school.id}/reject`;
+            console.log('[REJECT] Envoi vers:', endpoint);
+            
+            fetch(CONFIG.API_URL + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: '200700',
+                    reason: reason || 'Non spécifiée'
+                })
+            })
+            .then(response => {
+                console.log('[REJECT] Status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('[REJECT] Réponse:', data);
+                if (data.error) {
+                    alert('❌ Erreur: ' + data.error);
+                } else {
+                    alert('❌ École rejetée: ' + school.name);
+                    loadPendingSchools();
+                    loadStatistics();
+                }
+            })
+            .catch(err => {
+                console.error('[REJECT] ERREUR:', err);
+                alert('❌ Erreur: ' + err.message);
+            });
+        }
+
         // Charger les statistiques
         function loadStatistics() {
             console.log('[STATS] Chargement des statistiques...');
@@ -502,14 +632,20 @@
                             </div>
                         `;
                     } else {
+                        // Stocker les données des écoles pour y accéder plus tard
+                        window.pendingSchoolsData = {};
+                        
                         let html = '';
                         data.schools.forEach(school => {
+                            // Stocker les données dans un objet global
+                            window.pendingSchoolsData[school.id] = school;
+                            
                             html += `
                                 <div class="school-card pending" data-school-id="${school.id}">
                                     <div class="school-header">
                                         <div>
-                                            <div class="school-name">🏫 ${school.name}</div>
-                                            <div class="school-code">Code: ${school.school_code}</div>
+                                            <div class="school-name">🏫 ${escapeHtml(school.name)}</div>
+                                            <div class="school-code">Code: ${escapeHtml(school.school_code)}</div>
                                         </div>
                                         <span class="status-badge status-pending">⏳ En attente</span>
                                     </div>
@@ -517,35 +653,35 @@
                                     <div class="school-info">
                                         <div class="info-item">
                                             <span class="info-label">📍 Ville:</span>
-                                            <span class="info-value">${school.city || 'N/A'}</span>
+                                            <span class="info-value">${escapeHtml(school.city || 'N/A')}</span>
                                         </div>
                                         <div class="info-item">
                                             <span class="info-label">📧 Email:</span>
-                                            <span class="info-value">${school.email}</span>
+                                            <span class="info-value">${escapeHtml(school.email)}</span>
                                         </div>
                                         <div class="info-item">
                                             <span class="info-label">📞 Téléphone:</span>
-                                            <span class="info-value">${school.phone}</span>
+                                            <span class="info-value">${escapeHtml(school.phone)}</span>
                                         </div>
                                         <div class="info-item">
                                             <span class="info-label">👤 Contact:</span>
-                                            <span class="info-value">${school.first_name} ${school.last_name}</span>
+                                            <span class="info-value">${escapeHtml(school.first_name)} ${escapeHtml(school.last_name)}</span>
                                         </div>
                                     </div>
 
                                     <div class="school-footer">
                                         <div>
-                                            <strong>Type:</strong> ${school.type} | <strong>Élèves:</strong> ${school.student_count || 'N/A'}
+                                            <strong>Type:</strong> ${escapeHtml(school.type)} | <strong>Élèves:</strong> ${school.student_count || 'N/A'}
                                         </div>
                                     </div>
 
                                     <div class="school-footer">
                                         <div></div>
                                         <div class="action-btns">
-                                            <button class="btn-sm btn-approve" onclick="approveSchool(${school.id}, '${school.school_code.replace(/'/g, "\\'")}', '${school.phone.replace(/'/g, "\\'")}', '${school.first_name.replace(/'/g, "\\'")}')">
+                                            <button class="btn-sm btn-approve" data-action="approve" data-id="${school.id}">
                                                 ✅ Approuver
                                             </button>
-                                            <button class="btn-sm btn-reject" onclick="rejectSchool(${school.id}, '${school.school_code.replace(/'/g, "\\'")}')">
+                                            <button class="btn-sm btn-reject" data-action="reject" data-id="${school.id}">
                                                 ❌ Rejeter
                                             </button>
                                         </div>
@@ -554,6 +690,9 @@
                             `;
                         });
                         pendingContainer.innerHTML = html;
+                        
+                        // Attacher les événements aux boutons
+                        attachPendingSchoolEvents();
                     }
                 })
                 .catch(error => {
@@ -676,113 +815,6 @@
             // Afficher le tab demandé
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
-        }
-
-        function approveSchool(schoolId, schoolCode, phoneNumber, schoolName) {
-            console.log('[APPROVE] === DÉBUT APPROBATION ===');
-            console.log('[APPROVE] schoolId:', schoolId);
-            console.log('[APPROVE] schoolCode:', schoolCode);
-            console.log('[APPROVE] phoneNumber:', phoneNumber);
-            console.log('[APPROVE] schoolName:', schoolName);
-            
-            // Demander le mot de passe
-            const password = prompt('Mot de passe pour l\'école (laisser vide = auto):', '');
-            console.log('[APPROVE] Password prompt result:', password);
-            
-            if (password === null) {
-                console.log('[APPROVE] Annulé par l\'utilisateur');
-                return;
-            }
-            
-            const endpoint = `/api/super-admin/schools/${schoolId}/approve`;
-            console.log('[APPROVE] Endpoint:', endpoint);
-            
-            const body = {
-                code: '200700',
-                defaultPassword: password || undefined
-            };
-            console.log('[APPROVE] Body:', JSON.stringify(body));
-            
-            // Appel API
-            fetch('http://localhost:3000' + endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(body)
-            })
-            .then(response => {
-                console.log('[APPROVE] Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('[APPROVE] Response data:', data);
-                
-                if (data.error) {
-                    alert('❌ Erreur: ' + data.error);
-                    return;
-                }
-                
-                const finalPassword = data.defaultPassword || password || 'généré';
-                
-                alert('✅ École approuvée!\n\nCode: ' + data.schoolCode + '\nMot de passe: ' + finalPassword);
-                
-                // Recharger
-                loadPendingSchools();
-                loadActiveSchools();
-                loadStatistics();
-            })
-            .catch(err => {
-                console.error('[APPROVE] ERREUR:', err);
-                alert('❌ Erreur: ' + err.message);
-            });
-        }
-
-        function rejectSchool(schoolId, schoolCode) {
-            console.log('[REJECT] === DÉBUT REJET ===');
-            console.log('[REJECT] schoolId:', schoolId);
-            console.log('[REJECT] schoolCode:', schoolCode);
-            
-            const reason = prompt('Raison du rejet:', '');
-            console.log('[REJECT] Reason:', reason);
-            
-            if (reason === null) {
-                console.log('[REJECT] Annulé par l\'utilisateur');
-                return;
-            }
-            
-            const endpoint = `/api/super-admin/schools/${schoolId}/reject`;
-            console.log('[REJECT] Endpoint:', endpoint);
-            
-            fetch('http://localhost:3000' + endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    code: '200700',
-                    reason: reason || 'Non spécifiée'
-                })
-            })
-            .then(response => {
-                console.log('[REJECT] Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('[REJECT] Response data:', data);
-                
-                if (data.error) {
-                    alert('❌ Erreur: ' + data.error);
-                } else {
-                    alert('❌ École rejetée: ' + (data.schoolName || schoolCode));
-                    loadPendingSchools();
-                    loadStatistics();
-                }
-            })
-            .catch(err => {
-                console.error('[REJECT] ERREUR:', err);
-                alert('❌ Erreur: ' + err.message);
-            });
         }
 
         function viewSchool(schoolId) {

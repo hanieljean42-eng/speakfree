@@ -472,6 +472,9 @@
         </footer>
     </div>
 
+    <!-- Configuration centralisée API - DOIT ÊTRE CHARGÉ EN PREMIER -->
+    <script src="/config.js"></script>
+    
     <script>
         // Charger les statistiques réelles au chargement de la page
         document.addEventListener('DOMContentLoaded', function() {
@@ -481,8 +484,8 @@
         });
 
         function loadStatistics() {
-            fetch('/api/schools/stats/global')
-                .then(res => res.json())
+            console.log('[INDEX] Chargement des statistiques...');
+            apiCall('/api/schools/stats/global')
                 .then(data => {
                     // Mettre à jour les statistiques avec animation
                     updateStat('statsSchools', data.schools || 0);
@@ -515,7 +518,5 @@
             }
         }
     </script>
-    <!-- Configuration centralisée API -->
-    <script src="/config.js"></script>
 </body>
 </html>
