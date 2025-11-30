@@ -93,6 +93,28 @@ router.get('/debug/all-reports', authMiddleware, async (req, res) => {
     }
 });
 
+// POST /api/admin/fix-reports-school - Corriger le school_id des signalements orphelins
+router.post('/fix-reports-school', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const { targetSchoolId } = req.body;
+    
+    try {
+        // Trouver les signalements avec school_id NULL ou invalide
+        const [result] = await db.execute(
+            `UPDATE reports SET school_id = ? WHERE school_id IS NULL OR school_id NOT IN (SELECT id FROM schools)`,
+            [targetSchoolId || req.user.schoolId]
+        );
+        
+        res.json({ 
+            success: true, 
+            message: 'Signalements corrigés',
+            updated: result.affectedRows
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/admin/reports - Liste des signalements
 router.get('/reports', authMiddleware, async (req, res) => {
     const db = req.db;
