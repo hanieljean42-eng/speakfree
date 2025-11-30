@@ -48,6 +48,23 @@
         .empty { text-align: center; padding: 40px; color: #999; }
         .loading { text-align: center; padding: 20px; color: #666; }
         
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-content h2 { color: #c0392b; margin-bottom: 20px; text-align: center; }
+        .modal-content input, .modal-content textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .modal-content textarea { min-height: 200px; font-family: monospace; }
+        .modal-content .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-content .btn-row button { flex: 1; padding: 12px; border: none; border-radius: 5px; font-size: 14px; cursor: pointer; }
+        .btn-whatsapp { background: #25D366; color: white; font-weight: bold; }
+        .btn-whatsapp:hover { background: #128C7E; }
+        .btn-cancel { background: #e0e0e0; color: #333; }
+        .btn-copy { background: #3498db; color: white; }
+        .info-box { background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #27ae60; }
+        .info-box p { margin: 5px 0; font-size: 14px; }
+        .info-box strong { color: #27ae60; }
+        
         @media (max-width: 768px) {
             .stats { grid-template-columns: repeat(2, 1fr); }
             .tabs { flex-wrap: wrap; }
@@ -89,6 +106,39 @@
         
         <div class="school-list" id="schoolList">
             <div class="loading">Chargement...</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL APPROBATION -->
+<div class="modal" id="approveModal">
+    <div class="modal-content">
+        <h2>✅ Approuver l'École</h2>
+        
+        <div id="approveStep1">
+            <p style="color:#666; margin-bottom:15px;">Définissez le mot de passe pour cette école :</p>
+            <input type="text" id="schoolPassword" placeholder="Mot de passe de l'école..." />
+            <input type="text" id="schoolPhone" placeholder="Numéro WhatsApp (ex: 225XXXXXXXXXX)" />
+            <div class="btn-row">
+                <button class="btn-cancel" onclick="closeApproveModal()">Annuler</button>
+                <button class="btn-green" onclick="confirmApprove()">Approuver</button>
+            </div>
+        </div>
+        
+        <div id="approveStep2" style="display:none;">
+            <div class="info-box">
+                <p>✅ <strong>École approuvée avec succès !</strong></p>
+                <p>📧 Envoyez les informations de connexion par WhatsApp</p>
+            </div>
+            
+            <p style="color:#666; margin-bottom:10px;">Message à envoyer :</p>
+            <textarea id="whatsappMessage" readonly></textarea>
+            
+            <div class="btn-row">
+                <button class="btn-copy" onclick="copyMessage()">📋 Copier</button>
+                <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 Envoyer WhatsApp</button>
+            </div>
+            <button class="btn-cancel" style="width:100%; margin-top:10px;" onclick="closeApproveModal()">Fermer</button>
         </div>
     </div>
 </div>
@@ -247,24 +297,120 @@
         console.log('Attached events to', buttons.length, 'buttons');
     }
     
-    // ===== ACTIONS =====
-    function approveSchool(id) {
-        var pwd = prompt('Mot de passe pour cette école ?');
-        if (!pwd) return;
+    // ===== VARIABLES POUR LE MODAL =====
+    var pendingApproveId = null;
+    var pendingSchoolData = null;
+    
+    // ===== MODAL FUNCTIONS =====
+    function openApproveModal(id) {
+        pendingApproveId = id;
         
-        fetch(API + '/api/super-admin/schools/' + id + '/approve', {
+        // Récupérer les infos de l'école
+        fetch(API + '/api/super-admin/schools/' + id + '/details')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.school) {
+                pendingSchoolData = d.school;
+                document.getElementById('schoolPhone').value = d.school.phone || '';
+            }
+        });
+        
+        document.getElementById('approveStep1').style.display = 'block';
+        document.getElementById('approveStep2').style.display = 'none';
+        document.getElementById('schoolPassword').value = '';
+        document.getElementById('approveModal').classList.add('active');
+    }
+    
+    function closeApproveModal() {
+        document.getElementById('approveModal').classList.remove('active');
+        pendingApproveId = null;
+        pendingSchoolData = null;
+        loadSchools(currentTab);
+        loadStats();
+    }
+    
+    function confirmApprove() {
+        var pwd = document.getElementById('schoolPassword').value.trim();
+        var phone = document.getElementById('schoolPhone').value.trim();
+        
+        if (!pwd) {
+            alert('Veuillez entrer un mot de passe');
+            return;
+        }
+        
+        fetch(API + '/api/super-admin/schools/' + pendingApproveId + '/approve', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: CODE, defaultPassword: pwd })
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-            if (d.error) { alert('Erreur: ' + d.error); return; }
-            alert('École approuvée !');
-            loadSchools(currentTab);
-            loadStats();
+            if (d.error) { 
+                alert('Erreur: ' + d.error); 
+                return; 
+            }
+            
+            // Préparer le message WhatsApp
+            var schoolName = pendingSchoolData ? pendingSchoolData.name : 'Votre école';
+            var schoolCode = pendingSchoolData ? pendingSchoolData.school_code : d.school_code || 'CODE';
+            var adminEmail = pendingSchoolData ? (pendingSchoolData.admin_email || pendingSchoolData.email) : '';
+            
+            var message = '🎉 *BIENVENUE SUR SPEAKFREE !*\n\n';
+            message += '✅ Votre école *' + schoolName + '* a été approuvée !\n\n';
+            message += '📋 *INFORMATIONS DE CONNEXION*\n';
+            message += '━━━━━━━━━━━━━━━━━━━━━\n';
+            message += '🌐 Site : https://speakfree-school.netlify.app\n';
+            message += '🔑 Page connexion : https://speakfree-school.netlify.app/login.html\n\n';
+            message += '👤 *Identifiant* : ' + schoolCode + '\n';
+            message += '🔐 *Mot de passe* : ' + pwd + '\n';
+            message += '━━━━━━━━━━━━━━━━━━━━━\n\n';
+            message += '📌 *COMMENT UTILISER SPEAKFREE ?*\n';
+            message += '1️⃣ Connectez-vous avec les identifiants ci-dessus\n';
+            message += '2️⃣ Accédez à votre tableau de bord\n';
+            message += '3️⃣ Gérez les signalements anonymes des élèves\n';
+            message += '4️⃣ Répondez aux discussions\n\n';
+            message += '💡 *CONSEILS*\n';
+            message += '• Changez votre mot de passe dès la première connexion\n';
+            message += '• Consultez régulièrement les nouveaux signalements\n';
+            message += '• Répondez rapidement aux élèves\n\n';
+            message += '📞 Support : Contactez l\'administrateur SpeakFree\n\n';
+            message += '🙏 Merci de faire confiance à SpeakFree pour protéger vos élèves !';
+            
+            document.getElementById('whatsappMessage').value = message;
+            document.getElementById('schoolPhone').value = phone;
+            
+            // Passer à l'étape 2
+            document.getElementById('approveStep1').style.display = 'none';
+            document.getElementById('approveStep2').style.display = 'block';
         })
         .catch(function(e) { alert('Erreur: ' + e.message); });
+    }
+    
+    function copyMessage() {
+        var textarea = document.getElementById('whatsappMessage');
+        textarea.select();
+        document.execCommand('copy');
+        alert('✅ Message copié !');
+    }
+    
+    function sendWhatsApp() {
+        var phone = document.getElementById('schoolPhone').value.trim().replace(/\D/g, '');
+        var message = document.getElementById('whatsappMessage').value;
+        
+        if (!phone) {
+            phone = prompt('Entrez le numéro WhatsApp (ex: 225XXXXXXXXXX):');
+            if (!phone) return;
+            phone = phone.replace(/\D/g, '');
+        }
+        
+        // Ouvrir WhatsApp Web/App
+        var url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+        window.open(url, '_blank');
+    }
+    
+    // ===== ACTIONS =====
+    function approveSchool(id) {
+        openApproveModal(id);
     }
     
     function rejectSchool(id) {
