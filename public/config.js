@@ -17,9 +17,7 @@ function getApiUrl() {
     
     // Production sur Netlify → API sur Render
     if (hostname.includes('netlify.app') || hostname.includes('speakfree')) {
-        // ⚠️ APRÈS DÉPLOIEMENT RENDER: Remplacez l'URL ci-dessous par votre vraie URL Render
-        // Exemple: https://speakfree-api.onrender.com ou https://votre-nom.onrender.com
-        return 'https://VOTRE-APP-RENDER.onrender.com';
+        return 'https://speakfree-m9xv.onrender.com';
     }
     
     // Production sur domaine personnalisé
