@@ -1426,12 +1426,16 @@ function attachReportCardEvents() {
 // TOUS LES SIGNALEMENTS
 function loadAllReports() {
     console.log('[ADMIN] Chargement tous les signalements...');
+    console.log('[ADMIN] Token:', token ? 'présent' : 'absent');
+    console.log('[ADMIN] Admin info:', JSON.stringify(admin));
+    
     const container = document.getElementById('allReportsList');
     const statusFilter = document.getElementById('statusFilter').value;
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
 
     let url = CONFIG.API_URL + '/api/admin/reports?limit=100';
     if (statusFilter) url += '&status=' + statusFilter;
+    console.log('[ADMIN] URL:', url);
 
     fetch(url, {
         headers: {
@@ -1439,11 +1443,15 @@ function loadAllReports() {
             'Content-Type': 'application/json'
         }
     })
-    .then(res => res.json())
+    .then(res => {
+        console.log('[ADMIN] Réponse status:', res.status);
+        return res.json();
+    })
     .then(data => {
         console.log('[ADMIN] Tous signalements:', data);
+        console.log('[ADMIN] Debug info:', data.debug);
         if (!data.reports || data.reports.length === 0) {
-            container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
+            container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3><p style="color:#666;">School ID: ' + (admin.schoolId || 'non défini') + '</p></div>';
             return;
         }
         container.innerHTML = '<p style="color: #666; margin-bottom: 15px;"><strong>' + data.reports.length + '</strong> signalement(s)</p>' + data.reports.map(report => createReportCard(report)).join('');
@@ -1451,7 +1459,7 @@ function loadAllReports() {
     })
     .catch(err => {
         console.error('[ADMIN] Erreur:', err);
-        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3></div>';
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3><p>' + err.message + '</p></div>';
     });
 }
 

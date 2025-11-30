@@ -77,7 +77,20 @@ router.get('/reports', authMiddleware, async (req, res) => {
     const schoolId = req.user.schoolId;
     const { status, page = 1, limit = 20 } = req.query;
     
+    console.log('[ADMIN REPORTS] schoolId du token:', schoolId, 'type:', typeof schoolId);
+    
     try {
+        // D'abord, compter tous les signalements pour cette école
+        const [[{ totalCount }]] = await db.execute(
+            'SELECT COUNT(*) as totalCount FROM reports WHERE school_id = ?',
+            [schoolId]
+        );
+        console.log('[ADMIN REPORTS] Total signalements pour school_id', schoolId, ':', totalCount);
+        
+        // Montrer aussi les signalements récents pour debug
+        const [allReports] = await db.execute('SELECT id, school_id, tracking_code FROM reports ORDER BY created_at DESC LIMIT 5');
+        console.log('[ADMIN REPORTS] 5 derniers signalements (toutes écoles):', JSON.stringify(allReports));
+        
         let query = 'SELECT * FROM reports WHERE school_id = ?';
         const params = [schoolId];
         
@@ -90,8 +103,9 @@ router.get('/reports', authMiddleware, async (req, res) => {
         params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
         
         const [reports] = await db.execute(query, params);
+        console.log('[ADMIN REPORTS] Signalements trouvés:', reports.length);
         
-        res.json({ success: true, reports });
+        res.json({ success: true, reports, debug: { schoolId, totalCount } });
         
     } catch (error) {
         console.error('Erreur get reports:', error);
