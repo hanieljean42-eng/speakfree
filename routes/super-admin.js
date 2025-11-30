@@ -471,8 +471,16 @@ router.get('/schools/:schoolId/details', async (req, res) => {
             [schoolId]
         );
         
+        // Ajouter les infos admin au school pour faciliter l'accès
+        const school = schools[0];
+        if (admins.length > 0) {
+            school.admin_phone = admins[0].phone;
+            school.admin_email = admins[0].email;
+            school.admin_name = admins[0].first_name + ' ' + admins[0].last_name;
+        }
+        
         res.json({
-            school: schools[0],
+            school,
             admins,
             recentReports
         });

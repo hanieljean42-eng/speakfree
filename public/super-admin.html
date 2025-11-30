@@ -120,29 +120,32 @@
         <h2>✅ Approuver l'École</h2>
         
         <div id="approveStep1">
+            <div class="school-info-box" id="schoolInfoBox" style="background:#f8f9fa; padding:15px; border-radius:10px; margin-bottom:15px;">
+                <p><strong>🏫 École :</strong> <span id="modalSchoolName">-</span></p>
+                <p><strong>📞 Téléphone :</strong> <span id="modalSchoolPhone">-</span></p>
+                <p><strong>📧 Email :</strong> <span id="modalSchoolEmail">-</span></p>
+            </div>
             <p style="color:#666; margin-bottom:15px;">Définissez le mot de passe pour cette école :</p>
-            <input type="text" id="schoolPassword" placeholder="Mot de passe de l'école..." />
-            <input type="text" id="schoolPhone" placeholder="Numéro WhatsApp (ex: 225XXXXXXXXXX)" />
-            <div class="btn-row">
-                <button class="btn-cancel" onclick="closeApproveModal()">Annuler</button>
-                <button class="btn-green" onclick="confirmApprove()">Approuver</button>
+            <input type="text" id="schoolPassword" placeholder="Mot de passe de l'école..." style="font-size:18px;" />
+            <div class="btn-row" style="margin-top:20px;">
+                <button class="btn-cancel" id="btnCancelApprove">Annuler</button>
+                <button class="btn-green" id="btnConfirmApprove">✅ Approuver & Envoyer WhatsApp</button>
             </div>
         </div>
         
         <div id="approveStep2" style="display:none;">
-            <div class="info-box">
+            <div class="info-box" style="background:#d4edda; padding:15px; border-radius:10px; margin-bottom:15px;">
                 <p>✅ <strong>École approuvée avec succès !</strong></p>
-                <p>📧 Envoyez les informations de connexion par WhatsApp</p>
             </div>
             
-            <p style="color:#666; margin-bottom:10px;">Message à envoyer :</p>
-            <textarea id="whatsappMessage" readonly></textarea>
+            <p style="color:#666; margin-bottom:10px;">Message WhatsApp :</p>
+            <textarea id="whatsappMessage" readonly style="height:200px;"></textarea>
             
-            <div class="btn-row">
-                <button class="btn-copy" onclick="copyMessage()">📋 Copier</button>
-                <button class="btn-whatsapp" onclick="sendWhatsApp()">📱 Envoyer WhatsApp</button>
+            <div class="btn-row" style="margin-top:15px;">
+                <button class="btn-copy" id="btnCopyMessage">📋 Copier</button>
+                <button class="btn-whatsapp" id="btnSendWhatsApp">📱 Envoyer WhatsApp</button>
             </div>
-            <button class="btn-cancel" style="width:100%; margin-top:10px;" onclick="closeApproveModal()">Fermer</button>
+            <button class="btn-cancel" style="width:100%; margin-top:15px;" id="btnCloseModal">Fermer</button>
         </div>
     </div>
 </div>
@@ -300,43 +303,75 @@
     // ===== VARIABLES POUR LE MODAL =====
     var pendingApproveId = null;
     var pendingSchoolData = null;
+    var pendingSchoolPhone = null;
+    
+    // ===== ATTACHER LES EVENTS DU MODAL =====
+    document.getElementById('btnCancelApprove').onclick = closeApproveModal;
+    document.getElementById('btnConfirmApprove').onclick = confirmApprove;
+    document.getElementById('btnCopyMessage').onclick = copyMessage;
+    document.getElementById('btnSendWhatsApp').onclick = sendWhatsApp;
+    document.getElementById('btnCloseModal').onclick = closeApproveModal;
     
     // ===== MODAL FUNCTIONS =====
     function openApproveModal(id) {
         pendingApproveId = id;
+        pendingSchoolData = null;
+        pendingSchoolPhone = null;
+        
+        // Reset
+        document.getElementById('schoolPassword').value = '';
+        document.getElementById('modalSchoolName').textContent = 'Chargement...';
+        document.getElementById('modalSchoolPhone').textContent = 'Chargement...';
+        document.getElementById('modalSchoolEmail').textContent = 'Chargement...';
+        document.getElementById('approveStep1').style.display = 'block';
+        document.getElementById('approveStep2').style.display = 'none';
+        document.getElementById('approveModal').classList.add('active');
         
         // Récupérer les infos de l'école
         fetch(API + '/api/super-admin/schools/' + id + '/details')
         .then(function(r) { return r.json(); })
         .then(function(d) {
+            console.log('[MODAL] Données école:', d);
             if (d.school) {
                 pendingSchoolData = d.school;
-                document.getElementById('schoolPhone').value = d.school.phone || '';
+                pendingSchoolPhone = d.school.phone || d.school.admin_phone || '';
+                
+                document.getElementById('modalSchoolName').textContent = d.school.name || '-';
+                document.getElementById('modalSchoolPhone').textContent = pendingSchoolPhone || 'Non renseigné';
+                document.getElementById('modalSchoolEmail').textContent = d.school.email || d.school.admin_email || '-';
             }
+        })
+        .catch(function(e) {
+            console.error('[MODAL] Erreur:', e);
         });
-        
-        document.getElementById('approveStep1').style.display = 'block';
-        document.getElementById('approveStep2').style.display = 'none';
-        document.getElementById('schoolPassword').value = '';
-        document.getElementById('approveModal').classList.add('active');
     }
     
     function closeApproveModal() {
         document.getElementById('approveModal').classList.remove('active');
         pendingApproveId = null;
         pendingSchoolData = null;
+        pendingSchoolPhone = null;
         loadSchools(currentTab);
         loadStats();
     }
     
     function confirmApprove() {
         var pwd = document.getElementById('schoolPassword').value.trim();
-        var phone = document.getElementById('schoolPhone').value.trim();
         
         if (!pwd) {
-            alert('Veuillez entrer un mot de passe');
+            alert('⚠️ Veuillez entrer un mot de passe');
             return;
         }
+        
+        if (pwd.length < 4) {
+            alert('⚠️ Le mot de passe doit contenir au moins 4 caractères');
+            return;
+        }
+        
+        // Désactiver le bouton pendant le traitement
+        var btn = document.getElementById('btnConfirmApprove');
+        btn.disabled = true;
+        btn.textContent = '⏳ Approbation...';
         
         fetch(API + '/api/super-admin/schools/' + pendingApproveId + '/approve', {
             method: 'POST',
@@ -345,45 +380,51 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(d) {
+            btn.disabled = false;
+            btn.textContent = '✅ Approuver & Envoyer WhatsApp';
+            
             if (d.error) { 
-                alert('Erreur: ' + d.error); 
+                alert('❌ Erreur: ' + d.error); 
                 return; 
             }
             
             // Préparer le message WhatsApp
             var schoolName = pendingSchoolData ? pendingSchoolData.name : 'Votre école';
-            var schoolCode = pendingSchoolData ? pendingSchoolData.school_code : d.school_code || 'CODE';
-            var adminEmail = pendingSchoolData ? (pendingSchoolData.admin_email || pendingSchoolData.email) : '';
+            var schoolCode = pendingSchoolData ? pendingSchoolData.school_code : (d.school_code || 'CODE');
             
             var message = '🎉 *BIENVENUE SUR SPEAKFREE !*\n\n';
             message += '✅ Votre école *' + schoolName + '* a été approuvée !\n\n';
             message += '📋 *INFORMATIONS DE CONNEXION*\n';
             message += '━━━━━━━━━━━━━━━━━━━━━\n';
-            message += '🌐 Site : https://speakfree-school.netlify.app\n';
-            message += '🔑 Page connexion : https://speakfree-school.netlify.app/login.html\n\n';
+            message += '🌐 Site : https://speakfree.pages.dev\n';
+            message += '🔑 Connexion : https://speakfree.pages.dev/login.html\n\n';
             message += '👤 *Identifiant* : ' + schoolCode + '\n';
             message += '🔐 *Mot de passe* : ' + pwd + '\n';
             message += '━━━━━━━━━━━━━━━━━━━━━\n\n';
             message += '📌 *COMMENT UTILISER SPEAKFREE ?*\n';
             message += '1️⃣ Connectez-vous avec les identifiants ci-dessus\n';
             message += '2️⃣ Accédez à votre tableau de bord\n';
-            message += '3️⃣ Gérez les signalements anonymes des élèves\n';
-            message += '4️⃣ Répondez aux discussions\n\n';
-            message += '💡 *CONSEILS*\n';
-            message += '• Changez votre mot de passe dès la première connexion\n';
-            message += '• Consultez régulièrement les nouveaux signalements\n';
-            message += '• Répondez rapidement aux élèves\n\n';
-            message += '📞 Support : Contactez l\'administrateur SpeakFree\n\n';
-            message += '🙏 Merci de faire confiance à SpeakFree pour protéger vos élèves !';
+            message += '3️⃣ Gérez les signalements anonymes\n\n';
+            message += '🙏 Merci de faire confiance à SpeakFree !';
             
             document.getElementById('whatsappMessage').value = message;
-            document.getElementById('schoolPhone').value = phone;
             
             // Passer à l'étape 2
             document.getElementById('approveStep1').style.display = 'none';
             document.getElementById('approveStep2').style.display = 'block';
+            
+            // Ouvrir WhatsApp automatiquement si on a le numéro
+            if (pendingSchoolPhone) {
+                setTimeout(function() {
+                    sendWhatsApp();
+                }, 500);
+            }
         })
-        .catch(function(e) { alert('Erreur: ' + e.message); });
+        .catch(function(e) { 
+            btn.disabled = false;
+            btn.textContent = '✅ Approuver & Envoyer WhatsApp';
+            alert('❌ Erreur: ' + e.message); 
+        });
     }
     
     function copyMessage() {
@@ -394,11 +435,11 @@
     }
     
     function sendWhatsApp() {
-        var phone = document.getElementById('schoolPhone').value.trim().replace(/\D/g, '');
+        var phone = pendingSchoolPhone ? pendingSchoolPhone.replace(/\D/g, '') : '';
         var message = document.getElementById('whatsappMessage').value;
         
         if (!phone) {
-            phone = prompt('Entrez le numéro WhatsApp (ex: 225XXXXXXXXXX):');
+            phone = prompt('📱 Entrez le numéro WhatsApp (ex: 225XXXXXXXXXX):');
             if (!phone) return;
             phone = phone.replace(/\D/g, '');
         }
