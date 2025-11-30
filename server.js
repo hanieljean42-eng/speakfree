@@ -380,36 +380,53 @@ app.get('/api/health', (req, res) => {
 app.get('/api/files/:fileId', async (req, res) => {
     try {
         const { fileId } = req.params;
+        console.log('[FILES] Demande fichier ID:', fileId);
+        
         const [files] = await pool.execute(
-            'SELECT filename, original_name, file_type, file_data, file_path FROM report_files WHERE id = ?',
+            'SELECT id, filename, original_name, file_type, file_data, file_path FROM report_files WHERE id = ?',
             [fileId]
         );
         
         if (files.length === 0) {
+            console.log('[FILES] Fichier non trouvé:', fileId);
             return res.status(404).json({ error: 'Fichier non trouvé' });
         }
         
         const file = files[0];
+        console.log('[FILES] Fichier trouvé:', file.original_name, 'Type:', file.file_type, 'Data présent:', !!file.file_data);
         
-        // Si le fichier est stocké en base64/binaire
-        if (file.file_data) {
-            res.setHeader('Content-Type', file.file_type);
-            res.setHeader('Content-Disposition', `inline; filename="${file.original_name}"`);
+        // Ajouter les headers CORS explicitement
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        
+        // Si le fichier est stocké en binaire dans la base
+        if (file.file_data && file.file_data.length > 0) {
+            console.log('[FILES] Envoi depuis file_data, taille:', file.file_data.length);
+            res.setHeader('Content-Type', file.file_type || 'application/octet-stream');
+            res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.original_name)}"`);
+            res.setHeader('Content-Length', file.file_data.length);
             return res.send(file.file_data);
         }
         
-        // Sinon, essayer de servir depuis le système de fichiers (local)
-        if (file.file_path) {
-            const filePath = path.join(__dirname, 'uploads', 'reports', file.filename);
-            if (require('fs').existsSync(filePath)) {
-                res.setHeader('Content-Type', file.file_type);
-                return res.sendFile(filePath);
+        // Sinon, essayer de servir depuis le système de fichiers (local uniquement)
+        if (file.file_path || file.filename) {
+            const fs = require('fs');
+            const filename = file.filename || (file.file_path ? file.file_path.split(/[\\\/]/).pop() : null);
+            if (filename) {
+                const filePath = path.join(__dirname, 'uploads', 'reports', filename);
+                console.log('[FILES] Tentative lecture fichier local:', filePath);
+                if (fs.existsSync(filePath)) {
+                    res.setHeader('Content-Type', file.file_type || 'application/octet-stream');
+                    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.original_name)}"`);
+                    return res.sendFile(filePath);
+                }
             }
         }
         
-        res.status(404).json({ error: 'Fichier non disponible' });
+        console.log('[FILES] Aucune donnée disponible pour le fichier');
+        res.status(404).json({ error: 'Données du fichier non disponibles' });
     } catch (error) {
-        console.error('Erreur lecture fichier:', error);
+        console.error('[FILES] Erreur lecture fichier:', error);
         res.status(500).json({ error: 'Erreur serveur' });
     }
 });

@@ -1554,20 +1554,25 @@ function viewReportDetails(reportId) {
                         ${files.map((f, index) => {
                             const isImage = f.file_type && f.file_type.startsWith('image/');
                             const isVideo = f.file_type && f.file_type.startsWith('video/');
-                            // Utiliser l'API pour récupérer les fichiers (fonctionne en local et production)
+                            // Utiliser l'API pour récupérer les fichiers
                             const fileUrl = CONFIG.API_URL + '/api/files/' + f.id;
                             const fileSize = formatFileSize(f.file_size);
                             
                             if (isImage) {
                                 return `
                                     <div class="media-item">
-                                        <img src="${fileUrl}" alt="${escapeHtml(f.original_name)}" onclick="openLightbox(${index})" loading="lazy" onerror="this.style.display='none'; this.parentElement.querySelector('.media-error').style.display='flex';">
-                                        <div class="media-error" style="display: none; height: 180px; align-items: center; justify-content: center; background: #ffebee; color: #c62828;">❌ Image non disponible</div>
+                                        <img src="${fileUrl}" alt="${escapeHtml(f.original_name)}" onclick="openLightbox(${index})" loading="lazy" 
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                            crossorigin="anonymous">
+                                        <div class="media-error" style="display: none; height: 180px; align-items: center; justify-content: center; background: #fff3cd; color: #856404; flex-direction: column; gap: 10px;">
+                                            <span>⚠️ Aperçu non disponible</span>
+                                            <a href="${fileUrl}" target="_blank" style="color: #0d6efd; text-decoration: underline;">Ouvrir dans un nouvel onglet</a>
+                                        </div>
                                         <div class="media-info">
                                             <div class="media-name" title="${escapeHtml(f.original_name)}">${escapeHtml(f.original_name)}</div>
                                             <div class="media-size">${fileSize}</div>
                                             <div class="media-actions">
-                                                <button class="media-btn media-btn-view" onclick="openLightbox(${index})">👁️ Voir</button>
+                                                <a href="${fileUrl}" target="_blank" class="media-btn media-btn-view">👁️ Ouvrir</a>
                                                 <a href="${fileUrl}" download="${escapeHtml(f.original_name)}" class="media-btn media-btn-download">⬇️</a>
                                             </div>
                                         </div>
@@ -1576,14 +1581,14 @@ function viewReportDetails(reportId) {
                             } else if (isVideo) {
                                 return `
                                     <div class="media-item">
-                                        <video onclick="openLightbox(${index})">
+                                        <video onclick="openLightbox(${index})" crossorigin="anonymous">
                                             <source src="${fileUrl}" type="${f.file_type}">
                                         </video>
                                         <div class="media-info">
                                             <div class="media-name" title="${escapeHtml(f.original_name)}">🎥 ${escapeHtml(f.original_name)}</div>
                                             <div class="media-size">${fileSize}</div>
                                             <div class="media-actions">
-                                                <button class="media-btn media-btn-view" onclick="openLightbox(${index})">▶️ Lire</button>
+                                                <a href="${fileUrl}" target="_blank" class="media-btn media-btn-view">▶️ Ouvrir</a>
                                                 <a href="${fileUrl}" download="${escapeHtml(f.original_name)}" class="media-btn media-btn-download">⬇️</a>
                                             </div>
                                         </div>
@@ -1599,7 +1604,7 @@ function viewReportDetails(reportId) {
                                             <div class="media-name" title="${escapeHtml(f.original_name)}">${escapeHtml(f.original_name)}</div>
                                             <div class="media-size">${fileSize}</div>
                                             <div class="media-actions">
-                                                <a href="${fileUrl}" download="${escapeHtml(f.original_name)}" class="media-btn media-btn-download" style="width: 100%;">⬇️ Télécharger</a>
+                                                <a href="${fileUrl}" target="_blank" class="media-btn media-btn-download" style="width: 100%;">📥 Télécharger</a>
                                             </div>
                                         </div>
                                     </div>
@@ -1683,9 +1688,18 @@ function openLightbox(index) {
     const fileUrl = CONFIG.API_URL + '/api/files/' + file.id;
     
     if (isImage) {
-        content.innerHTML = `<img src="${fileUrl}" alt="${escapeHtml(file.original_name)}">`;
+        content.innerHTML = `
+            <img src="${fileUrl}" alt="${escapeHtml(file.original_name)}" crossorigin="anonymous"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display: none; flex-direction: column; align-items: center; gap: 20px; color: white;">
+                <span style="font-size: 1.2em;">⚠️ Impossible de charger l'image ici</span>
+                <a href="${fileUrl}" target="_blank" style="color: #4fc3f7; padding: 10px 20px; border: 2px solid #4fc3f7; border-radius: 8px; text-decoration: none;">
+                    🔗 Ouvrir dans un nouvel onglet
+                </a>
+            </div>
+        `;
     } else if (isVideo) {
-        content.innerHTML = `<video controls autoplay style="max-width: 90%; max-height: 80%;"><source src="${fileUrl}" type="${file.file_type}"></video>`;
+        content.innerHTML = `<video controls autoplay style="max-width: 90%; max-height: 80%;" crossorigin="anonymous"><source src="${fileUrl}" type="${file.file_type}"></video>`;
     }
     
     caption.textContent = `${file.original_name} (${index + 1}/${currentMediaFiles.length})`;

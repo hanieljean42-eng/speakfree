@@ -5,20 +5,25 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Configuration Multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '..', 'uploads', 'reports');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+// Configuration Multer - memoryStorage pour production (Render)
+let storage;
+if (process.env.NODE_ENV === 'production') {
+    storage = multer.memoryStorage();
+} else {
+    storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            const uploadPath = path.join(__dirname, '..', 'uploads', 'reports');
+            if (!fs.existsSync(uploadPath)) {
+                fs.mkdirSync(uploadPath, { recursive: true });
+            }
+            cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, uniqueSuffix + path.extname(file.originalname));
         }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+    });
+}
 
 const upload = multer({
     storage: storage,
@@ -70,13 +75,16 @@ router.post('/create', upload.array('files', 10), async (req, res) => {
         
         console.log('[REPORTS] Signalement créé ID:', result.insertId, 'pour school_id:', school.id);
         
-        // Sauvegarder les fichiers
+        // Sauvegarder les fichiers (avec données binaires pour production)
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
+                const uniqueFilename = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+                const fileData = file.buffer || (file.path ? fs.readFileSync(file.path) : null);
+                
                 await db.execute(
-                    `INSERT INTO report_files (report_id, filename, original_name, file_type, file_size, file_path)
-                     VALUES (?, ?, ?, ?, ?, ?)`,
-                    [result.insertId, file.filename, file.originalname, file.mimetype, file.size, file.path]
+                    `INSERT INTO report_files (report_id, filename, original_name, file_type, file_size, file_path, file_data)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [result.insertId, uniqueFilename, file.originalname, file.mimetype, file.size, file.path || null, fileData]
                 );
             }
         }
