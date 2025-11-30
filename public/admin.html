@@ -309,6 +309,12 @@
             color: #555;
             line-height: 1.6;
             margin: 10px 0;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .report-footer {
@@ -465,6 +471,10 @@
         .detail-value {
             color: #333;
             font-size: 1.1em;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
         }
 
         .files-list {
@@ -1387,10 +1397,10 @@ function createReportCard(report) {
                 <div><strong>👥 Témoins:</strong> ${witnesses}</div>
             </div>
             
-            <div class="report-description" style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 15px;">
+            <div class="report-description" style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 15px; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; max-width: 100%; overflow: hidden;">
                 <strong style="color: #667eea; display: block; margin-bottom: 8px;">📋 Description du signalement:</strong>
-                <p style="margin: 0; line-height: 1.6; color: #333;">${description}</p>
-                ${additionalInfo ? '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd;"><strong style="color: #888;">ℹ️ Infos supplémentaires:</strong> ' + additionalInfo + '</div>' : ''}
+                <p style="margin: 0; line-height: 1.6; color: #333; white-space: pre-wrap; word-wrap: break-word; word-break: break-word;">${description}</p>
+                ${additionalInfo ? '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; word-wrap: break-word;"><strong style="color: #888;">ℹ️ Infos supplémentaires:</strong> ' + additionalInfo + '</div>' : ''}
             </div>
             
             <div class="report-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -1550,6 +1560,7 @@ function viewReportDetails(reportId) {
             mediaGalleryHtml = `
                 <div style="margin: 20px 0;">
                     <h3>📎 Fichiers joints (${files.length})</h3>
+                    <p style="font-size: 0.85em; color: #666; margin-bottom: 10px;">💡 Les fichiers uploadés avant le 30/11/2025 peuvent ne pas s'afficher. Les nouveaux fichiers s'afficheront correctement.</p>
                     <div class="media-gallery">
                         ${files.map((f, index) => {
                             const isImage = f.file_type && f.file_type.startsWith('image/');
@@ -1562,18 +1573,17 @@ function viewReportDetails(reportId) {
                                 return `
                                     <div class="media-item">
                                         <img src="${fileUrl}" alt="${escapeHtml(f.original_name)}" onclick="openLightbox(${index})" loading="lazy" 
-                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                            crossorigin="anonymous">
-                                        <div class="media-error" style="display: none; height: 180px; align-items: center; justify-content: center; background: #fff3cd; color: #856404; flex-direction: column; gap: 10px;">
-                                            <span>⚠️ Aperçu non disponible</span>
-                                            <a href="${fileUrl}" target="_blank" style="color: #0d6efd; text-decoration: underline;">Ouvrir dans un nouvel onglet</a>
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div class="media-error" style="display: none; height: 180px; align-items: center; justify-content: center; background: #fff3cd; color: #856404; flex-direction: column; gap: 5px; text-align: center; padding: 10px;">
+                                            <span style="font-size: 2em;">🖼️</span>
+                                            <span style="font-weight: bold;">${escapeHtml(f.original_name)}</span>
+                                            <span style="font-size: 0.85em;">⚠️ Fichier ancien - aperçu non disponible</span>
                                         </div>
                                         <div class="media-info">
                                             <div class="media-name" title="${escapeHtml(f.original_name)}">${escapeHtml(f.original_name)}</div>
                                             <div class="media-size">${fileSize}</div>
                                             <div class="media-actions">
                                                 <a href="${fileUrl}" target="_blank" class="media-btn media-btn-view">👁️ Ouvrir</a>
-                                                <a href="${fileUrl}" download="${escapeHtml(f.original_name)}" class="media-btn media-btn-download">⬇️</a>
                                             </div>
                                         </div>
                                     </div>
@@ -1581,15 +1591,19 @@ function viewReportDetails(reportId) {
                             } else if (isVideo) {
                                 return `
                                     <div class="media-item">
-                                        <video onclick="openLightbox(${index})" crossorigin="anonymous">
+                                        <video onclick="openLightbox(${index})" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                             <source src="${fileUrl}" type="${f.file_type}">
                                         </video>
+                                        <div class="media-error" style="display: none; height: 180px; align-items: center; justify-content: center; background: #fff3cd; color: #856404; flex-direction: column; gap: 5px; text-align: center; padding: 10px;">
+                                            <span style="font-size: 2em;">🎥</span>
+                                            <span style="font-weight: bold;">${escapeHtml(f.original_name)}</span>
+                                            <span style="font-size: 0.85em;">⚠️ Fichier ancien - aperçu non disponible</span>
+                                        </div>
                                         <div class="media-info">
                                             <div class="media-name" title="${escapeHtml(f.original_name)}">🎥 ${escapeHtml(f.original_name)}</div>
                                             <div class="media-size">${fileSize}</div>
                                             <div class="media-actions">
                                                 <a href="${fileUrl}" target="_blank" class="media-btn media-btn-view">▶️ Ouvrir</a>
-                                                <a href="${fileUrl}" download="${escapeHtml(f.original_name)}" class="media-btn media-btn-download">⬇️</a>
                                             </div>
                                         </div>
                                     </div>
@@ -1597,8 +1611,9 @@ function viewReportDetails(reportId) {
                             } else {
                                 return `
                                     <div class="media-item">
-                                        <div style="height: 180px; display: flex; align-items: center; justify-content: center; background: #e9ecef;">
-                                            <span style="font-size: 4em;">📄</span>
+                                        <div style="height: 180px; display: flex; align-items: center; justify-content: center; background: #e9ecef; flex-direction: column; gap: 5px;">
+                                            <span style="font-size: 3em;">📄</span>
+                                            <span style="font-size: 0.85em; color: #666;">${escapeHtml(f.original_name)}</span>
                                         </div>
                                         <div class="media-info">
                                             <div class="media-name" title="${escapeHtml(f.original_name)}">${escapeHtml(f.original_name)}</div>
@@ -1636,7 +1651,7 @@ function viewReportDetails(reportId) {
             </div>
             <div style="margin: 20px 0;">
                 <h3>📝 Description</h3>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap;">${escapeHtml(report.description)}</div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; max-width: 100%; overflow: hidden;">${escapeHtml(report.description)}</div>
             </div>
             ${mediaGalleryHtml}
             ${messages.length > 0 ? '<div style="margin: 20px 0;"><h3>💬 Discussion (' + messages.length + ')</h3><div style="max-height: 300px; overflow-y: auto;">' + messages.map(m => '<div style="padding: 10px; margin-bottom: 10px; background: ' + (m.sender_type === 'school' ? '#e3f2fd' : '#f8f9fa') + '; border-radius: 8px;"><strong>' + (m.sender_type === 'school' ? '🏫 École' : '👤 Élève') + '</strong> <small>' + new Date(m.created_at).toLocaleString('fr-FR') + '</small><p style="margin-top: 8px;">' + escapeHtml(m.message) + '</p></div>').join('') + '</div></div>' : ''}
