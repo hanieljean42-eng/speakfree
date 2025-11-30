@@ -1,6 +1,6 @@
 // Configuration du mode maintenance
 // Changez cette valeur à true pour activer le mode maintenance
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false; // Désactivé le 30 nov 2025
 
 // Pages exclues de la redirection (ex: page de maintenance elle-même)
 const EXCLUDED_PAGES = [
