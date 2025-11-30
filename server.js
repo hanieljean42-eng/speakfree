@@ -1,4 +1,5 @@
 // server.js - Serveur Express Principal SpeakFree (MySQL)
+// Version: 2.1 - Debug mode pour signalements
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
