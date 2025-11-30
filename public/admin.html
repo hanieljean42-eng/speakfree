@@ -1936,10 +1936,12 @@ function loadSettings() {
     .then(res => res.json())
     .then(data => {
         console.log('[ADMIN] Paramètres:', data);
-        document.getElementById('settingsSchoolCode').textContent = data.school_code || '-';
-        document.getElementById('settingsSchoolName').textContent = data.name || '-';
-        document.getElementById('settingsCity').textContent = data.city || '-';
-        document.getElementById('settingsStatus').textContent = data.status === 'active' ? 'Active' : 'Inactive';
+        const school = data.school || data;
+        document.getElementById('settingsSchoolCode').textContent = school.school_code || admin.schoolCode || '-';
+        document.getElementById('settingsSchoolName').textContent = school.name || admin.schoolName || '-';
+        document.getElementById('settingsCity').textContent = school.city || '-';
+        document.getElementById('settingsStatus').textContent = school.status === 'active' ? '✅ Active' : (school.status === 'pending' ? '⏳ En attente' : '❌ Inactive');
+        document.getElementById('settingsStatus').style.color = school.status === 'active' ? '#28a745' : (school.status === 'pending' ? '#ffc107' : '#dc3545');
     })
     .catch(err => console.error('[ADMIN] Erreur:', err));
 }

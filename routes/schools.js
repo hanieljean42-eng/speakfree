@@ -115,7 +115,7 @@ router.get('/:code', async (req, res) => {
     
     try {
         const [schools] = await db.execute(
-            'SELECT id, school_code, name, type, city FROM schools WHERE school_code = ? AND status = "active"',
+            'SELECT id, school_code, name, type, city, status FROM schools WHERE school_code = ?',
             [code]
         );
         
