@@ -32,8 +32,10 @@ async function initDatabase() {
         // Ajouter SSL pour la production (si configuré)
         if (process.env.MYSQL_SSL === 'true' || process.env.NODE_ENV === 'production') {
             dbConfig.ssl = {
-                rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== 'false'
+                // Pour Clever Cloud et autres, désactiver la vérification des certificats auto-signés
+                rejectUnauthorized: false
             };
+            console.log('🔒 SSL activé pour MySQL');
         }
         
         pool = mysql.createPool(dbConfig);
