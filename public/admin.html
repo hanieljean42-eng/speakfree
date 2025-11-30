@@ -729,19 +729,97 @@
 
         @media (max-width: 768px) {
             .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100vh;
+                width: 280px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .sidebar-overlay {
                 display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
             }
 
             .main-content {
                 margin-left: 0;
                 padding: 15px;
             }
+
+            .mobile-header {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                margin: -15px -15px 15px -15px;
+            }
+
+            .hamburger-btn {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 5px;
+            }
+
+            .mobile-title {
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            .top-bar {
+                display: none;
+            }
+
+            .close-sidebar-btn {
+                display: block !important;
+            }
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        .close-sidebar-btn {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
         }
     </style>
 </head>
 <body>
+    <!-- Overlay pour mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
+        <button class="close-sidebar-btn" id="closeSidebarBtn">✕</button>
         <div class="sidebar-header">
             <h2>💬 SpeakFree</h2>
             <p>Dashboard Admin</p>
@@ -784,6 +862,13 @@
 
     <!-- Main Content -->
     <div class="main-content">
+        <!-- Mobile Header -->
+        <div class="mobile-header">
+            <button class="hamburger-btn" id="hamburgerBtn">☰</button>
+            <span class="mobile-title">💬 SpeakFree</span>
+            <div style="width: 40px;"></div>
+        </div>
+
         <!-- Top Bar -->
         <div class="top-bar">
             <h1 id="pageTitle">Tableau de Bord</h1>
@@ -1160,6 +1245,39 @@ function attachEvents() {
         pwdForm.addEventListener('submit', function(e) {
             e.preventDefault();
             changePassword();
+        });
+    }
+    
+    // Menu hamburger mobile
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+    
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('show');
+    }
+    
+    if (hamburgerBtn && sidebar && sidebarOverlay) {
+        hamburgerBtn.addEventListener('click', function() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('show');
+        });
+        
+        sidebarOverlay.addEventListener('click', closeSidebar);
+        
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', closeSidebar);
+        }
+        
+        // Fermer le menu après avoir cliqué sur un item
+        document.querySelectorAll('.menu-item[data-section]').forEach(item => {
+            item.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
         });
     }
     
