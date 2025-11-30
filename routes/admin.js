@@ -71,6 +71,28 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/admin/debug/all-reports - Debug: voir tous les signalements
+router.get('/debug/all-reports', authMiddleware, async (req, res) => {
+    const db = req.db;
+    try {
+        const [reports] = await db.execute(
+            `SELECT r.id, r.school_id, r.tracking_code, r.incident_type, r.created_at, s.name as school_name, s.school_code
+             FROM reports r 
+             LEFT JOIN schools s ON r.school_id = s.id 
+             ORDER BY r.created_at DESC LIMIT 20`
+        );
+        const [schools] = await db.execute('SELECT id, school_code, name, status FROM schools');
+        res.json({ 
+            success: true, 
+            yourSchoolId: req.user.schoolId,
+            reports, 
+            schools 
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/admin/reports - Liste des signalements
 router.get('/reports', authMiddleware, async (req, res) => {
     const db = req.db;
