@@ -1,5 +1,15 @@
 # 🚀 Guide de Déploiement SpeakFree
 
+## ✅ URLs de Production
+
+| Service | URL |
+|---------|-----|
+| **Frontend (Netlify)** | https://speakfree-school.netlify.app |
+| **Backend (Render)** | https://speakfree-m9xv.onrender.com |
+| **Base MySQL (Clever Cloud)** | bmq6uuilmskgu31f7mtn-mysql.services.clever-cloud.com |
+
+---
+
 ## Prérequis
 
 1. **Compte GitHub** - Pour héberger le code

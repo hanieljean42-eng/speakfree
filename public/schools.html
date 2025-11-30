@@ -388,6 +388,9 @@
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
         const ACCESS_PASSWORD = '200700';
         let allSchools = [];
@@ -418,7 +421,7 @@
         // Charger les statistiques globales
         async function loadGlobalStats() {
             try {
-                const response = await fetch('/api/schools/stats/global');
+                const response = await fetch(CONFIG.API_URL + '/api/schools/stats/global');
                 const data = await response.json();
                 
                 document.getElementById('statSchools').textContent = data.schools || 0;
@@ -436,7 +439,7 @@
             const grid = document.getElementById('schoolsGrid');
             
             try {
-                const response = await fetch('/api/schools/list');
+                const response = await fetch(CONFIG.API_URL + '/api/schools/list');
                 const data = await response.json();
                 
                 allSchools = data.schools || [];

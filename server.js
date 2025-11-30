@@ -225,6 +225,7 @@ const corsOptions = {
             'http://localhost:5500',          // Live Server VSCode
             'http://127.0.0.1:5500',
             'https://speakfree.netlify.app',  // Production Netlify
+            'https://speakfree-school.netlify.app',  // Production Netlify (votre site)
             // Ajouter vos autres domaines ici
         ];
         

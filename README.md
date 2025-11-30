@@ -6,6 +6,16 @@
 ![Node](https://img.shields.io/badge/node-22.x-green)
 ![License](https://img.shields.io/badge/license-ISC-orange)
 
+## 🌐 Accès Production
+
+| Service | URL |
+|---------|-----|
+| 🌐 **Site Web** | https://speakfree-school.netlify.app |
+| ⚙️ **API Backend** | https://speakfree-m9xv.onrender.com |
+| 🔐 **Super Admin** | https://speakfree-school.netlify.app/super-admin.html (Code: `200700`) |
+
+---
+
 ## 🎯 Fonctionnalités
 
 - 🤖 **Assistant IA (Haniel)** - Guide les élèves pour faire un signalement
