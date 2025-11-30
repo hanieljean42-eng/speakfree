@@ -148,7 +148,8 @@ async function createTables() {
             original_name VARCHAR(255) NOT NULL,
             file_type VARCHAR(100) NOT NULL,
             file_size INT NOT NULL,
-            file_path TEXT NOT NULL,
+            file_path TEXT,
+            file_data LONGBLOB,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
         )`,
@@ -181,6 +182,7 @@ async function createTables() {
             id INT AUTO_INCREMENT PRIMARY KEY,
             session_id VARCHAR(50) UNIQUE NOT NULL,
             school_id INT,
+            incident_type VARCHAR(100),
             status VARCHAR(20) DEFAULT 'active',
             ended_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -227,6 +229,29 @@ async function createTables() {
         } catch (err) {
             // Ignorer les erreurs de collation
         }
+    }
+    
+    // Migration: ajouter la colonne incident_type si elle n'existe pas
+    try {
+        await pool.execute("ALTER TABLE ai_chat_sessions ADD COLUMN incident_type VARCHAR(100) AFTER school_id");
+        console.log('✅ Colonne incident_type ajoutée à ai_chat_sessions');
+    } catch (err) {
+        // Ignorer si la colonne existe déjà
+    }
+    
+    // Migration: ajouter la colonne file_data pour stocker les fichiers en binaire
+    try {
+        await pool.execute("ALTER TABLE report_files ADD COLUMN file_data LONGBLOB");
+        console.log('✅ Colonne file_data ajoutée à report_files');
+    } catch (err) {
+        // Ignorer si la colonne existe déjà
+    }
+    
+    // Migration: rendre file_path optionnel
+    try {
+        await pool.execute("ALTER TABLE report_files MODIFY file_path TEXT");
+    } catch (err) {
+        // Ignorer
     }
 
     console.log('✅ Tables de base de données créées/vérifiées');
@@ -349,6 +374,44 @@ app.get('/api/health', (req, res) => {
         database: 'MySQL',
         timestamp: new Date().toISOString()
     });
+});
+
+// Route pour servir les fichiers depuis la base de données
+app.get('/api/files/:fileId', async (req, res) => {
+    try {
+        const { fileId } = req.params;
+        const [files] = await pool.execute(
+            'SELECT filename, original_name, file_type, file_data, file_path FROM report_files WHERE id = ?',
+            [fileId]
+        );
+        
+        if (files.length === 0) {
+            return res.status(404).json({ error: 'Fichier non trouvé' });
+        }
+        
+        const file = files[0];
+        
+        // Si le fichier est stocké en base64/binaire
+        if (file.file_data) {
+            res.setHeader('Content-Type', file.file_type);
+            res.setHeader('Content-Disposition', `inline; filename="${file.original_name}"`);
+            return res.send(file.file_data);
+        }
+        
+        // Sinon, essayer de servir depuis le système de fichiers (local)
+        if (file.file_path) {
+            const filePath = path.join(__dirname, 'uploads', 'reports', file.filename);
+            if (require('fs').existsSync(filePath)) {
+                res.setHeader('Content-Type', file.file_type);
+                return res.sendFile(filePath);
+            }
+        }
+        
+        res.status(404).json({ error: 'Fichier non disponible' });
+    } catch (error) {
+        console.error('Erreur lecture fichier:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
 // Routes des pages HTML

@@ -473,6 +473,73 @@
             font-size: 1.2em;
             margin: 10px 0;
         }
+
+        .incident-type-selector {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            color: #333;
+        }
+
+        .incident-type-selector h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .incident-types-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .incident-type-btn {
+            padding: 15px 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .incident-type-btn:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .incident-type-btn.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .incident-type-btn .icon {
+            font-size: 1.8em;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .start-chat-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .start-chat-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -497,8 +564,50 @@
                 <div class="resume-divider">
                     <span>ou</span>
                 </div>
-                <button onclick="startNewSession()" class="new-session-btn">🆕 Nouvelle conversation</button>
+                <button onclick="showIncidentTypeSelector()" class="new-session-btn">🆕 Nouveau signalement</button>
             </div>
+        </div>
+
+        <!-- Sélecteur de type d'incident -->
+        <div class="incident-type-selector" id="incidentTypeSelector" style="display: none;">
+            <h3>📋 Quel type de problème veux-tu signaler ?</h3>
+            <div class="incident-types-grid">
+                <button class="incident-type-btn" data-type="Harcèlement" onclick="selectIncidentType(this)">
+                    <span class="icon">😢</span>
+                    Harcèlement
+                </button>
+                <button class="incident-type-btn" data-type="Violence" onclick="selectIncidentType(this)">
+                    <span class="icon">👊</span>
+                    Violence
+                </button>
+                <button class="incident-type-btn" data-type="Racket" onclick="selectIncidentType(this)">
+                    <span class="icon">💰</span>
+                    Racket
+                </button>
+                <button class="incident-type-btn" data-type="Discrimination" onclick="selectIncidentType(this)">
+                    <span class="icon">🚫</span>
+                    Discrimination
+                </button>
+                <button class="incident-type-btn" data-type="Cyber-harcèlement" onclick="selectIncidentType(this)">
+                    <span class="icon">📱</span>
+                    Cyber-harcèlement
+                </button>
+                <button class="incident-type-btn" data-type="Agression sexuelle" onclick="selectIncidentType(this)">
+                    <span class="icon">⚠️</span>
+                    Agression sexuelle
+                </button>
+                <button class="incident-type-btn" data-type="Vol" onclick="selectIncidentType(this)">
+                    <span class="icon">🎒</span>
+                    Vol
+                </button>
+                <button class="incident-type-btn" data-type="Autre" onclick="selectIncidentType(this)">
+                    <span class="icon">❓</span>
+                    Autre
+                </button>
+            </div>
+            <button class="start-chat-btn" id="startChatBtn" onclick="startNewSession()" disabled>
+                💬 Commencer la discussion avec Haniel
+            </button>
         </div>
 
         <div class="session-info" id="sessionInfo" style="display: none;">
@@ -592,6 +701,7 @@
             // Masquer le chat et afficher la section de choix
             document.querySelector('.chat-container').style.display = 'none';
             document.getElementById('infoBox').style.display = 'none';
+            document.getElementById('incidentTypeSelector').style.display = 'none';
             document.getElementById('resumeSection').style.display = 'block';
             
             // Vérifier si un code est dans l'URL
@@ -603,10 +713,29 @@
             }
         });
 
+        // Afficher le sélecteur de type d'incident
+        function showIncidentTypeSelector() {
+            document.getElementById('resumeSection').style.display = 'none';
+            document.getElementById('incidentTypeSelector').style.display = 'block';
+        }
+
+        // Sélectionner un type d'incident
+        function selectIncidentType(btn) {
+            // Désélectionner tous les boutons
+            document.querySelectorAll('.incident-type-btn').forEach(b => b.classList.remove('selected'));
+            // Sélectionner celui cliqué
+            btn.classList.add('selected');
+            // Sauvegarder le type
+            reportData.incidentType = btn.dataset.type;
+            // Activer le bouton de démarrage
+            document.getElementById('startChatBtn').disabled = false;
+        }
+
         // Démarrer une nouvelle session
         function startNewSession() {
-            console.log('[CHAT] Démarrage nouvelle session...');
+            console.log('[CHAT] Démarrage nouvelle session, type:', reportData.incidentType);
             document.getElementById('resumeSection').style.display = 'none';
+            document.getElementById('incidentTypeSelector').style.display = 'none';
             document.querySelector('.chat-container').style.display = 'block';
             document.getElementById('infoBox').style.display = 'block';
             createSession();
@@ -733,9 +862,9 @@
             const fileBtn = document.getElementById('fileBtn');
             
             Array.from(files).forEach(file => {
-                // Vérifier la taille (10 MB max)
-                if (file.size > 10 * 1024 * 1024) {
-                    alert(`❌ Le fichier "${file.name}" est trop volumineux (max 10 MB)`);
+                // Vérifier la taille (50 MB max pour les vidéos)
+                if (file.size > 50 * 1024 * 1024) {
+                    alert(`❌ Le fichier "${file.name}" est trop volumineux (max 50 MB)`);
                     return;
                 }
                 
@@ -746,6 +875,11 @@
                 }
                 
                 uploadedFiles.push(file);
+                
+                // Uploader immédiatement au serveur si une session existe
+                if (sessionCode) {
+                    uploadFileToServer(file);
+                }
                 
                 // Créer la prévisualisation
                 const fileItem = document.createElement('div');
@@ -789,6 +923,32 @@
             }
         }
         
+        // Uploader un fichier au serveur immédiatement
+        function uploadFileToServer(file) {
+            if (!sessionCode) {
+                console.log('[CHAT] Pas de session, fichier sera uploadé plus tard');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('sessionCode', sessionCode);
+            formData.append('file', file);
+            
+            console.log('[CHAT] Upload fichier:', file.name);
+            
+            fetch(CONFIG.API_URL + '/api/ai-chat/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[CHAT] Fichier uploadé:', data);
+            })
+            .catch(err => {
+                console.error('[CHAT] Erreur upload:', err);
+            });
+        }
+        
         // Supprimer un fichier
         function removeFile(filename) {
             uploadedFiles = uploadedFiles.filter(f => f.name !== filename);
@@ -815,14 +975,17 @@
 
         // Créer une nouvelle session
         function createSession() {
-            console.log('[CHAT] Création session...');
+            console.log('[CHAT] Création session...', 'Type incident:', reportData.incidentType);
             
             const schoolCode = localStorage.getItem('selectedSchoolCode') || null;
             
             fetch(CONFIG.API_URL + '/api/ai-chat/create-session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ schoolCode: schoolCode })
+                body: JSON.stringify({ 
+                    schoolCode: schoolCode,
+                    incidentType: reportData.incidentType 
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -840,6 +1003,10 @@
                     
                     // Charger les messages de la session
                     loadMessages();
+                    
+                    // Envoyer un message de bienvenue avec le type
+                    const typeLabel = reportData.incidentType || 'Non spécifié';
+                    addMessage('bot', `👋 Bonjour ! Tu as sélectionné le type: <strong>${typeLabel}</strong>. Je suis Haniel, ton assistant de confiance. Raconte-moi ce qui s'est passé, je suis là pour t'écouter et t'aider.`);
                 } else if (data.error) {
                     console.error('[CHAT] Erreur:', data.error);
                     addMessage('bot', '❌ Erreur: ' + data.error);

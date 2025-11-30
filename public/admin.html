@@ -1554,9 +1554,8 @@ function viewReportDetails(reportId) {
                         ${files.map((f, index) => {
                             const isImage = f.file_type && f.file_type.startsWith('image/');
                             const isVideo = f.file_type && f.file_type.startsWith('video/');
-                            // Extraire juste le nom du fichier depuis le chemin complet
-                            const filename = f.filename || f.file_path.split(/[\\\/]/).pop();
-                            const fileUrl = '/uploads/reports/' + filename;
+                            // Utiliser l'API pour récupérer les fichiers (fonctionne en local et production)
+                            const fileUrl = CONFIG.API_URL + '/api/files/' + f.id;
                             const fileSize = formatFileSize(f.file_size);
                             
                             if (isImage) {
@@ -1680,9 +1679,8 @@ function openLightbox(index) {
     
     const isImage = file.file_type && file.file_type.startsWith('image/');
     const isVideo = file.file_type && file.file_type.startsWith('video/');
-    // Extraire juste le nom du fichier depuis le chemin complet
-    const filename = file.filename || file.file_path.split(/[\\\/]/).pop();
-    const fileUrl = '/uploads/reports/' + filename;
+    // Utiliser l'API pour récupérer les fichiers
+    const fileUrl = CONFIG.API_URL + '/api/files/' + file.id;
     
     if (isImage) {
         content.innerHTML = `<img src="${fileUrl}" alt="${escapeHtml(file.original_name)}">`;

@@ -234,6 +234,7 @@ router.post('/create-session', async (req, res) => {
     console.log('[AI-CHAT] Création de session demandée');
     
     const db = req.db;
+    const { schoolCode, incidentType } = req.body;
     
     // Vérifier que la base est disponible
     if (!db) {
@@ -246,21 +247,55 @@ router.post('/create-session', async (req, res) => {
     
     try {
         const sessionCode = generateSessionCode();
-        console.log('[AI-CHAT] Code session généré:', sessionCode);
+        console.log('[AI-CHAT] Code session généré:', sessionCode, 'Type incident:', incidentType);
+        
+        // Chercher l'école si un code est fourni
+        let schoolId = null;
+        let schoolName = null;
+        if (schoolCode) {
+            const [schools] = await db.execute(
+                'SELECT id, name FROM schools WHERE school_code = ? AND status = "active"',
+                [schoolCode.toUpperCase()]
+            );
+            if (schools.length > 0) {
+                schoolId = schools[0].id;
+                schoolName = schools[0].name;
+                console.log('[AI-CHAT] École trouvée:', schoolName);
+            }
+        }
         
         const [result] = await db.execute(
-            `INSERT INTO ai_chat_sessions (session_id, status) VALUES (?, 'active')`,
-            [sessionCode]
+            `INSERT INTO ai_chat_sessions (session_id, status, school_id, incident_type) VALUES (?, 'active', ?, ?)`,
+            [sessionCode, schoolId, incidentType || null]
         );
         console.log('[AI-CHAT] Session insérée, ID:', result.insertId);
         
         // Initialiser la session en mémoire
-        getSession(sessionCode);
+        const session = getSession(sessionCode);
+        session.schoolId = schoolId;
+        session.schoolName = schoolName;
+        session.incidentType = incidentType;
         
-        // Sauvegarder le message de bienvenue
+        // Si l'école est déjà connue, passer directement à l'étape 1
+        if (schoolId) {
+            session.step = 1;
+        }
+        
+        // Sauvegarder le message de bienvenue adapté
+        let welcomeMessage;
+        if (schoolId && incidentType) {
+            welcomeMessage = `Salut ! 👋 Je suis **Haniel**, ton assistant SpeakFree.
+
+Tu signales un incident de type **${incidentType}** à **${schoolName}**.
+
+**Raconte-moi ce qui s'est passé.** Prends ton temps, dis-moi tout ce que tu veux partager. Je t'écoute. 💙`;
+        } else {
+            welcomeMessage = MESSAGES.welcome;
+        }
+        
         await db.execute(
             `INSERT INTO ai_chat_messages (session_id, sender, message) VALUES (?, 'assistant', ?)`,
-            [result.insertId, MESSAGES.welcome]
+            [result.insertId, welcomeMessage]
         );
         console.log('[AI-CHAT] ✅ Session créée avec succès');
         
@@ -268,7 +303,9 @@ router.post('/create-session', async (req, res) => {
             success: true,
             sessionCode,
             sessionId: result.insertId,
-            message: MESSAGES.welcome
+            message: welcomeMessage,
+            schoolName: schoolName,
+            incidentType: incidentType
         });
         
     } catch (error) {
@@ -436,13 +473,13 @@ router.post('/message', async (req, res) => {
                 
                 session.reportId = reportResult.insertId;
                 
-                // Associer les fichiers au signalement
+                // Associer les fichiers au signalement (avec données binaires)
                 if (session.files.length > 0) {
                     for (const file of session.files) {
                         await db.execute(
-                            `INSERT INTO report_files (report_id, filename, original_name, file_type, file_size, file_path)
-                             VALUES (?, ?, ?, ?, ?, ?)`,
-                            [reportResult.insertId, file.filename, file.originalName, file.type, file.size, file.path]
+                            `INSERT INTO report_files (report_id, filename, original_name, file_type, file_size, file_path, file_data)
+                             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                            [reportResult.insertId, file.filename, file.originalName, file.type, file.size, file.path || null, file.data || null]
                         );
                     }
                 }
@@ -540,13 +577,20 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         
         const session = getSession(sessionCode);
         
-        // Ajouter le fichier à la session
+        // Générer un nom de fichier unique
+        const uniqueFilename = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(req.file.originalname);
+        
+        // Récupérer les données binaires du fichier
+        const fileData = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : null);
+        
+        // Ajouter le fichier à la session (avec les données binaires)
         session.files.push({
-            filename: req.file.filename,
+            filename: uniqueFilename,
             originalName: req.file.originalname,
             type: req.file.mimetype,
             size: req.file.size,
-            path: req.file.path
+            path: req.file.path || null,
+            data: fileData
         });
         
         const response = MESSAGES.fileReceived(req.file.originalname);
@@ -554,7 +598,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         // Sauvegarder dans les messages
         await db.execute(
             `INSERT INTO ai_chat_messages (session_id, sender, message, file_path) VALUES (?, 'user', ?, ?)`,
-            [sessions[0].id, `📎 ${req.file.originalname}`, req.file.path]
+            [sessions[0].id, `📎 ${req.file.originalname}`, uniqueFilename]
         );
         
         await db.execute(
