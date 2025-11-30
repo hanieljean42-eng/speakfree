@@ -1,0 +1,11 @@
+{
+  "name": "speakfree-frontend",
+  "version": "1.0.0",
+  "description": "SpeakFree - Plateforme de signalement scolaire anonyme",
+  "scripts": {
+    "build": "echo 'Static site - no build needed' && exit 0"
+  },
+  "keywords": ["speakfree", "school", "anonymous", "reporting"],
+  "author": "Haniel DJEBLE",
+  "license": "MIT"
+}
