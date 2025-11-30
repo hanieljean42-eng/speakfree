@@ -124,47 +124,30 @@ router.get('/reports', authMiddleware, async (req, res) => {
     console.log('[ADMIN REPORTS] schoolId du token:', schoolId);
     
     try {
-        // D'abord, récupérer le school_code de l'admin
-        const [schoolInfo] = await db.execute('SELECT school_code FROM schools WHERE id = ?', [schoolId]);
-        const schoolCode = schoolInfo.length > 0 ? schoolInfo[0].school_code : null;
-        console.log('[ADMIN REPORTS] School code:', schoolCode);
-        
-        // Récupérer les signalements par school_id OU par school_code (pour les cas où le signalement a été créé avec le code)
-        let query = `SELECT r.* FROM reports r 
-                     LEFT JOIN schools s ON r.school_id = s.id 
-                     WHERE r.school_id = ? OR s.school_code = ?`;
-        const params = [schoolId, schoolCode];
+        // TEMPORAIRE: Afficher TOUS les signalements pour debug
+        let query = 'SELECT * FROM reports';
+        const params = [];
         
         if (status) {
-            query += ' AND r.status = ?';
+            query += ' WHERE status = ?';
             params.push(status);
         }
         
-        query += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
+        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
         params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
         
         const [reports] = await db.execute(query, params);
-        console.log('[ADMIN REPORTS] Signalements trouvés:', reports.length);
+        console.log('[ADMIN REPORTS] TOUS les signalements trouvés:', reports.length);
         
-        // Si toujours aucun signalement, montrer TOUS les signalements pour debug
-        if (reports.length === 0) {
-            const [allReports] = await db.execute(
-                'SELECT * FROM reports ORDER BY created_at DESC LIMIT ?',
-                [parseInt(limit)]
-            );
-            console.log('[ADMIN REPORTS] Mode debug - tous signalements:', allReports.length);
-            return res.json({ 
-                success: true, 
-                reports: allReports, 
-                debug: { 
-                    schoolId, 
-                    schoolCode,
-                    message: 'Mode debug: affichage de tous les signalements car aucun ne correspond à votre école'
-                } 
-            });
-        }
-        
-        res.json({ success: true, reports });
+        res.json({ 
+            success: true, 
+            reports,
+            debug: {
+                yourSchoolId: schoolId,
+                totalReports: reports.length,
+                message: 'Mode debug: affichage de tous les signalements'
+            }
+        });
         
     } catch (error) {
         console.error('Erreur get reports:', error);
