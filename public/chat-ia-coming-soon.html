@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#fd7e14">
+    <title>🤖 Chat IA Haniel - Bientôt Disponible - SpeakFree</title>
+    <script src="/maintenance-config.js"></script>
+    <link rel="stylesheet" href="/styles-mobile.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fd7e14 0%, #ff9f43 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animation de fond avec des étoiles */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        .star:nth-child(1) {
+            width: 3px;
+            height: 3px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .star:nth-child(2) {
+            width: 2px;
+            height: 2px;
+            top: 40%;
+            left: 30%;
+            animation-delay: 1s;
+        }
+
+        .star:nth-child(3) {
+            width: 4px;
+            height: 4px;
+            top: 60%;
+            left: 70%;
+            animation-delay: 2s;
+        }
+
+        .star:nth-child(4) {
+            width: 3px;
+            height: 3px;
+            top: 80%;
+            left: 20%;
+            animation-delay: 1.5s;
+        }
+
+        .star:nth-child(5) {
+            width: 2px;
+            height: 2px;
+            top: 30%;
+            left: 80%;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 60px 40px;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 650px;
+            width: 90%;
+            position: relative;
+            z-index: 10;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .icon-wrapper {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .icon {
+            font-size: 100px;
+            animation: float 3s ease-in-out infinite;
+            display: inline-block;
+            filter: drop-shadow(0 10px 20px rgba(253, 126, 20, 0.3));
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .coming-soon-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fd7e14 0%, #ff9f43 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(253, 126, 20, 0.4);
+        }
+
+        h1 {
+            color: #fd7e14;
+            font-size: 2.8em;
+            margin-bottom: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .message {
+            color: #555;
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 35px;
+        }
+
+        .features {
+            background: #fff5ed;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border-left: 4px solid #fd7e14;
+        }
+
+        .features h3 {
+            color: #fd7e14;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .features ul {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            color: #666;
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #fd7e14;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #fd7e14 0%, #ff9f43 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(253, 126, 20, 0.4);
+            margin-top: 20px;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(253, 126, 20, 0.5);
+        }
+
+        .notification-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .notification-box p {
+            color: #2e7d32;
+            font-size: 1em;
+            margin: 0;
+        }
+
+        .notification-box strong {
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 2.2em;
+            }
+
+            .subtitle {
+                font-size: 1.1em;
+            }
+
+            .message {
+                font-size: 1em;
+            }
+
+            .icon {
+                font-size: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+    <div class="star"></div>
+
+    <div class="container">
+        <div class="icon-wrapper">
+            <div class="icon">🤖</div>
+        </div>
+        
+        <div class="coming-soon-badge">Bientôt Disponible</div>
+        
+        <h1>Chat IA Haniel</h1>
+        
+        <p class="subtitle">
+            Une intelligence artificielle pour vous accompagner
+        </p>
+        
+        <p class="message">
+            Nous travaillons activement sur <strong>Haniel</strong>, votre assistant IA personnel qui pourra vous aider à :
+        </p>
+
+        <div class="features">
+            <h3>🌟 Fonctionnalités à venir :</h3>
+            <ul>
+                <li>Répondre à vos questions en temps réel</li>
+                <li>Vous conseiller sur les signalements</li>
+                <li>Vous guider dans l'utilisation de SpeakFree</li>
+                <li>Fournir un soutien émotionnel et des ressources</li>
+                <li>Garantir la confidentialité de vos échanges</li>
+            </ul>
+        </div>
+
+        <div class="notification-box">
+            <p>
+                <strong>📢 Restez informé !</strong><br>
+                Cette fonctionnalité sera bientôt disponible. Nous vous tiendrons au courant de son lancement.
+            </p>
+        </div>
+
+        <a href="/" class="back-button">← Retour à l'accueil</a>
+    </div>
+</body>
+</html>
