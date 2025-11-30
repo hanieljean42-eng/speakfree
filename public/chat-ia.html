@@ -348,6 +348,108 @@
             }
         }
 
+        /* Section reprendre conversation */
+        .resume-section {
+            margin: 20px 0;
+        }
+
+        .resume-box {
+            background: rgba(255,255,255,0.95);
+            padding: 25px;
+            border-radius: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .resume-box h3 {
+            color: #fd7e14;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .resume-box p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .resume-input-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .resume-input {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            width: 250px;
+            text-transform: uppercase;
+        }
+
+        .resume-input:focus {
+            outline: none;
+            border-color: #fd7e14;
+        }
+
+        .resume-btn {
+            padding: 12px 25px;
+            background: #fd7e14;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .resume-btn:hover {
+            background: #e66a00;
+        }
+
+        .resume-divider {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .resume-divider::before,
+        .resume-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .resume-divider span {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .new-session-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .new-session-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        .resume-error {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
         .session-info {
             background: rgba(255,255,255,0.95);
             padding: 20px;
@@ -382,13 +484,30 @@
             <p>Ton assistant intelligent pour t'aider à faire ton signalement</p>
         </header>
 
+        <!-- Section pour reprendre une conversation -->
+        <div class="resume-section" id="resumeSection">
+            <div class="resume-box">
+                <h3>🔄 Reprendre une conversation</h3>
+                <p>Tu as déjà commencé une conversation ? Entre ton code :</p>
+                <div class="resume-input-row">
+                    <input type="text" id="resumeCodeInput" placeholder="Ex: CHAT-XXXXX-XXXXX" class="resume-input">
+                    <button onclick="resumeSession()" class="resume-btn">Reprendre</button>
+                </div>
+                <p class="resume-error" id="resumeError" style="display: none;"></p>
+                <div class="resume-divider">
+                    <span>ou</span>
+                </div>
+                <button onclick="startNewSession()" class="new-session-btn">🆕 Nouvelle conversation</button>
+            </div>
+        </div>
+
         <div class="session-info" id="sessionInfo" style="display: none;">
             <h3>📋 Code de conversation</h3>
             <p>Sauvegarde ce code pour reprendre ta conversation plus tard :</p>
             <div class="session-code" id="sessionCode"></div>
         </div>
 
-        <div class="info-box">
+        <div class="info-box" id="infoBox">
             <h3>💡 Comment ça marche ?</h3>
             <ul>
                 <li>Haniel est un assistant IA intelligent qui va te guider</li>
@@ -462,7 +581,6 @@
             // Vérifier que config.js est chargé
             if (typeof CONFIG === 'undefined') {
                 console.error('[CHAT] ERREUR: config.js non chargé!');
-                addMessage('bot', '❌ Erreur de configuration. Rafraîchis la page.');
                 return;
             }
             
@@ -471,12 +589,105 @@
             // Attacher les événements
             attachEvents();
             
-            // Créer une session
-            createSession();
+            // Masquer le chat et afficher la section de choix
+            document.querySelector('.chat-container').style.display = 'none';
+            document.getElementById('infoBox').style.display = 'none';
+            document.getElementById('resumeSection').style.display = 'block';
+            
+            // Vérifier si un code est dans l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeFromUrl = urlParams.get('code') || urlParams.get('session');
+            if (codeFromUrl) {
+                document.getElementById('resumeCodeInput').value = codeFromUrl;
+                resumeSession();
+            }
         });
+
+        // Démarrer une nouvelle session
+        function startNewSession() {
+            console.log('[CHAT] Démarrage nouvelle session...');
+            document.getElementById('resumeSection').style.display = 'none';
+            document.querySelector('.chat-container').style.display = 'block';
+            document.getElementById('infoBox').style.display = 'block';
+            createSession();
+        }
+
+        // Reprendre une session existante
+        function resumeSession() {
+            const codeInput = document.getElementById('resumeCodeInput');
+            const errorEl = document.getElementById('resumeError');
+            const code = codeInput.value.trim().toUpperCase();
+            
+            if (!code) {
+                errorEl.textContent = '❌ Entre un code de session';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            console.log('[CHAT] Reprise session:', code);
+            errorEl.style.display = 'none';
+            
+            // Appeler l'API pour récupérer la session
+            fetch(CONFIG.API_URL + '/api/ai-chat/session/' + encodeURIComponent(code))
+            .then(res => res.json())
+            .then(data => {
+                console.log('[CHAT] Session récupérée:', data);
+                
+                if (data.error) {
+                    errorEl.textContent = '❌ ' + data.error;
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                
+                if (data.session || data.sessionCode) {
+                    // Session trouvée
+                    sessionCode = data.sessionCode || code;
+                    sessionId = data.sessionId || data.session?.id;
+                    
+                    // Afficher le chat
+                    document.getElementById('resumeSection').style.display = 'none';
+                    document.querySelector('.chat-container').style.display = 'block';
+                    document.getElementById('infoBox').style.display = 'block';
+                    
+                    // Afficher le code de session
+                    document.getElementById('sessionInfo').style.display = 'block';
+                    document.getElementById('sessionCode').textContent = sessionCode;
+                    
+                    // Charger les messages existants
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            const role = msg.role || msg.sender;
+                            const content = msg.content || msg.message;
+                            addMessage(role === 'assistant' ? 'bot' : 'user', content);
+                        });
+                    } else {
+                        addMessage('bot', '👋 Bienvenue ! Tu peux continuer ta conversation.');
+                    }
+                } else {
+                    errorEl.textContent = '❌ Session non trouvée. Vérifie le code.';
+                    errorEl.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                console.error('[CHAT] Erreur reprise:', err);
+                errorEl.textContent = '❌ Erreur de connexion. Réessaie.';
+                errorEl.style.display = 'block';
+            });
+        }
 
         // Attacher les événements aux boutons
         function attachEvents() {
+            // Input code de reprise - Touche Entrée
+            const resumeInput = document.getElementById('resumeCodeInput');
+            if (resumeInput) {
+                resumeInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        resumeSession();
+                    }
+                });
+            }
+            
             // Bouton Envoyer
             const sendBtn = document.getElementById('sendBtn');
             if (sendBtn) {
@@ -498,7 +709,6 @@
                         sendMessage();
                     }
                 });
-                input.focus();
                 console.log('[CHAT] Input attaché');
             }
             
