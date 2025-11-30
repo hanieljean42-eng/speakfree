@@ -26,7 +26,9 @@ async function initDatabase() {
             port: parseInt(process.env.MYSQL_PORT) || 3306,
             waitForConnections: true,
             connectionLimit: 10,
-            queueLimit: 0
+            queueLimit: 0,
+            // Forcer le charset pour éviter les problèmes de collation
+            charset: 'utf8mb4'
         };
         
         // Ajouter SSL pour la production (si configuré)
@@ -42,6 +44,10 @@ async function initDatabase() {
 
         // Tester la connexion
         const connection = await pool.getConnection();
+        
+        // Forcer le charset de la connexion
+        await connection.query("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
+        
         console.log('✅ Base de données MySQL connectée');
         console.log(`   Host: ${dbConfig.host}, Database: ${dbConfig.database}`);
         connection.release();
@@ -198,6 +204,27 @@ async function createTables() {
             await pool.execute(query);
         } catch (err) {
             console.error('Erreur création table:', err.message);
+        }
+    }
+    
+    // Corriger la collation des tables existantes pour éviter les problèmes
+    try {
+        await pool.execute("ALTER DATABASE " + (process.env.MYSQL_DATABASE || 'speakfree') + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    } catch (err) {
+        // Ignorer si pas les droits
+    }
+    
+    // Corriger spécifiquement les tables de chat IA
+    const fixCollationQueries = [
+        "ALTER TABLE ai_chat_sessions CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+        "ALTER TABLE ai_chat_messages CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+    ];
+    
+    for (const query of fixCollationQueries) {
+        try {
+            await pool.execute(query);
+        } catch (err) {
+            // Ignorer les erreurs de collation
         }
     }
 
