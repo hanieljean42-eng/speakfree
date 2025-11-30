@@ -5,6 +5,12 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Access-Control-Allow-Origin: *
 
+/maintenance-config.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
 /*.js
   Content-Type: application/javascript
   Cache-Control: public, max-age=3600
