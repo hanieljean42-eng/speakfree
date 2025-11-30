@@ -30,22 +30,36 @@ router.post('/create', upload.array('files', 10), async (req, res) => {
     const db = req.db;
     const { schoolCode, incidentType, description, incidentDate, incidentTime, location, witnesses, additionalInfo } = req.body;
     
+    console.log('[REPORTS] Création signalement pour schoolCode:', schoolCode);
+    
     try {
         // Vérifier l'école
         const [schools] = await db.execute(
-            'SELECT id, name FROM schools WHERE school_code = ? AND status = "active"',
+            'SELECT id, name, status FROM schools WHERE school_code = ?',
             [schoolCode]
         );
         
+        console.log('[REPORTS] École trouvée:', schools.length > 0 ? JSON.stringify(schools[0]) : 'AUCUNE');
+        
         if (schools.length === 0) {
-            return res.status(404).json({ error: 'École non trouvée' });
+            const [allSchools] = await db.execute('SELECT school_code, name FROM schools LIMIT 10');
+            return res.status(404).json({ 
+                error: 'École non trouvée avec le code: ' + schoolCode,
+                hint: 'Codes disponibles: ' + allSchools.map(s => s.school_code).join(', ')
+            });
         }
         
         const school = schools[0];
         
+        if (school.status !== 'active') {
+            return res.status(400).json({ error: 'École non active. Statut actuel: ' + school.status });
+        }
+        
         // Générer les codes
         const trackingCode = 'RPT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
         const discussionCode = 'DSC-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        
+        console.log('[REPORTS] Création - school_id:', school.id, 'tracking:', trackingCode);
         
         // Créer le signalement
         const [result] = await db.execute(
@@ -53,6 +67,8 @@ router.post('/create', upload.array('files', 10), async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
             [school.id, trackingCode, discussionCode, incidentType, description, incidentDate || null, incidentTime || null, location || null, witnesses || null, additionalInfo || null]
         );
+        
+        console.log('[REPORTS] Signalement créé ID:', result.insertId, 'pour school_id:', school.id);
         
         // Sauvegarder les fichiers
         if (req.files && req.files.length > 0) {

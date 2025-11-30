@@ -121,39 +121,54 @@ router.get('/reports', authMiddleware, async (req, res) => {
     const schoolId = req.user.schoolId;
     const { status, page = 1, limit = 20 } = req.query;
     
-    console.log('[ADMIN REPORTS] schoolId du token:', schoolId, 'type:', typeof schoolId);
+    console.log('[ADMIN REPORTS] schoolId du token:', schoolId);
     
     try {
-        // D'abord, compter tous les signalements pour cette école
-        const [[{ totalCount }]] = await db.execute(
-            'SELECT COUNT(*) as totalCount FROM reports WHERE school_id = ?',
-            [schoolId]
-        );
-        console.log('[ADMIN REPORTS] Total signalements pour school_id', schoolId, ':', totalCount);
+        // D'abord, récupérer le school_code de l'admin
+        const [schoolInfo] = await db.execute('SELECT school_code FROM schools WHERE id = ?', [schoolId]);
+        const schoolCode = schoolInfo.length > 0 ? schoolInfo[0].school_code : null;
+        console.log('[ADMIN REPORTS] School code:', schoolCode);
         
-        // Montrer aussi les signalements récents pour debug
-        const [allReports] = await db.execute('SELECT id, school_id, tracking_code FROM reports ORDER BY created_at DESC LIMIT 5');
-        console.log('[ADMIN REPORTS] 5 derniers signalements (toutes écoles):', JSON.stringify(allReports));
-        
-        let query = 'SELECT * FROM reports WHERE school_id = ?';
-        const params = [schoolId];
+        // Récupérer les signalements par school_id OU par school_code (pour les cas où le signalement a été créé avec le code)
+        let query = `SELECT r.* FROM reports r 
+                     LEFT JOIN schools s ON r.school_id = s.id 
+                     WHERE r.school_id = ? OR s.school_code = ?`;
+        const params = [schoolId, schoolCode];
         
         if (status) {
-            query += ' AND status = ?';
+            query += ' AND r.status = ?';
             params.push(status);
         }
         
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        query += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
         params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
         
         const [reports] = await db.execute(query, params);
         console.log('[ADMIN REPORTS] Signalements trouvés:', reports.length);
         
-        res.json({ success: true, reports, debug: { schoolId, totalCount } });
+        // Si toujours aucun signalement, montrer TOUS les signalements pour debug
+        if (reports.length === 0) {
+            const [allReports] = await db.execute(
+                'SELECT * FROM reports ORDER BY created_at DESC LIMIT ?',
+                [parseInt(limit)]
+            );
+            console.log('[ADMIN REPORTS] Mode debug - tous signalements:', allReports.length);
+            return res.json({ 
+                success: true, 
+                reports: allReports, 
+                debug: { 
+                    schoolId, 
+                    schoolCode,
+                    message: 'Mode debug: affichage de tous les signalements car aucun ne correspond à votre école'
+                } 
+            });
+        }
+        
+        res.json({ success: true, reports });
         
     } catch (error) {
         console.error('Erreur get reports:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ error: 'Erreur serveur: ' + error.message });
     }
 });
 
