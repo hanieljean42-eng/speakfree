@@ -1487,43 +1487,32 @@ function openDiscussionModal(reportId) {
     setTimeout(() => viewReportDetails(reportId), 500);
 }
 
-// TOUS LES SIGNALEMENTS
+// TOUS LES SIGNALEMENTS (SIMPLIFIÉ)
 function loadAllReports() {
-    console.log('[ADMIN] Chargement tous les signalements...');
-    console.log('[ADMIN] Token:', token ? 'présent' : 'absent');
-    console.log('[ADMIN] Admin info:', JSON.stringify(admin));
-    
     const container = document.getElementById('allReportsList');
-    const statusFilter = document.getElementById('statusFilter').value;
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Chargement...</p></div>';
 
-    let url = CONFIG.API_URL + '/api/admin/reports?limit=100';
-    if (statusFilter) url += '&status=' + statusFilter;
-    console.log('[ADMIN] URL:', url);
-
-    fetch(url, {
+    fetch(CONFIG.API_URL + '/api/admin/reports', {
         headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
+            'Authorization': 'Bearer ' + token
         }
     })
-    .then(res => {
-        console.log('[ADMIN] Réponse status:', res.status);
-        return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
-        console.log('[ADMIN] Tous signalements:', data);
-        console.log('[ADMIN] Debug info:', data.debug);
+        console.log('Signalements reçus:', data);
+        
         if (!data.reports || data.reports.length === 0) {
-            container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3><p style="color:#666;">School ID: ' + (admin.schoolId || 'non défini') + '</p></div>';
+            container.innerHTML = '<div class="empty-state"><div class="icon">📢</div><h3>Aucun signalement</h3></div>';
             return;
         }
-        container.innerHTML = '<p style="color: #666; margin-bottom: 15px;"><strong>' + data.reports.length + '</strong> signalement(s)</p>' + data.reports.map(report => createReportCard(report)).join('');
+        
+        container.innerHTML = '<p style="margin-bottom:15px;"><strong>' + data.reports.length + '</strong> signalement(s)</p>' + 
+            data.reports.map(report => createReportCard(report)).join('');
         attachReportCardEvents();
     })
     .catch(err => {
-        console.error('[ADMIN] Erreur:', err);
-        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur</h3><p>' + err.message + '</p></div>';
+        console.error('Erreur:', err);
+        container.innerHTML = '<div class="empty-state"><div class="icon">❌</div><h3>Erreur de chargement</h3><p>' + err.message + '</p></div>';
     });
 }
 

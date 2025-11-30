@@ -115,43 +115,21 @@ router.post('/fix-reports-school', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/admin/reports - Liste des signalements
+// GET /api/admin/reports - Liste des signalements (SIMPLIFIÉ)
 router.get('/reports', authMiddleware, async (req, res) => {
     const db = req.db;
-    const schoolId = req.user.schoolId;
-    const { status, page = 1, limit = 20 } = req.query;
-    
-    console.log('[ADMIN REPORTS] schoolId du token:', schoolId);
     
     try {
-        // TEMPORAIRE: Afficher TOUS les signalements pour debug
-        let query = 'SELECT * FROM reports';
-        const params = [];
+        // Simple: récupérer TOUS les signalements
+        const [reports] = await db.execute(
+            'SELECT * FROM reports ORDER BY created_at DESC LIMIT 100'
+        );
         
-        if (status) {
-            query += ' WHERE status = ?';
-            params.push(status);
-        }
-        
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
-        
-        const [reports] = await db.execute(query, params);
-        console.log('[ADMIN REPORTS] TOUS les signalements trouvés:', reports.length);
-        
-        res.json({ 
-            success: true, 
-            reports,
-            debug: {
-                yourSchoolId: schoolId,
-                totalReports: reports.length,
-                message: 'Mode debug: affichage de tous les signalements'
-            }
-        });
+        res.json({ success: true, reports });
         
     } catch (error) {
-        console.error('Erreur get reports:', error);
-        res.status(500).json({ error: 'Erreur serveur: ' + error.message });
+        console.error('Erreur:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -232,45 +210,24 @@ router.patch('/reports/:id/status', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/admin/discussions - Liste des discussions
+// GET /api/admin/discussions - Liste des discussions (SIMPLIFIÉ)
 router.get('/discussions', authMiddleware, async (req, res) => {
     const db = req.db;
-    const schoolId = req.user.schoolId;
     
     try {
-        // Mode debug: si pas de discussions pour cette école, montrer toutes
-        let discussions;
-        const [schoolDiscussions] = await db.execute(
-            `SELECT d.*, r.tracking_code, r.incident_type, r.description, r.status as report_status, r.id as report_id, r.created_at as report_date,
-                    (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count,
-                    (SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id) as last_message
+        const [discussions] = await db.execute(
+            `SELECT d.*, r.tracking_code, r.incident_type, r.description, r.id as report_id,
+                    (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count
              FROM discussions d 
              JOIN reports r ON d.report_id = r.id 
-             WHERE d.school_id = ? 
-             ORDER BY COALESCE((SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id), d.updated_at) DESC`,
-            [schoolId]
+             ORDER BY d.created_at DESC LIMIT 50`
         );
-        
-        if (schoolDiscussions.length === 0) {
-            // Mode debug: montrer toutes les discussions
-            const [allDiscussions] = await db.execute(
-                `SELECT d.*, r.tracking_code, r.incident_type, r.description, r.status as report_status, r.id as report_id, r.created_at as report_date,
-                        (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count,
-                        (SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id) as last_message
-                 FROM discussions d 
-                 JOIN reports r ON d.report_id = r.id 
-                 ORDER BY d.created_at DESC LIMIT 20`
-            );
-            discussions = allDiscussions;
-        } else {
-            discussions = schoolDiscussions;
-        }
         
         res.json({ success: true, discussions });
         
     } catch (error) {
-        console.error('Erreur get discussions:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        console.error('Erreur:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
