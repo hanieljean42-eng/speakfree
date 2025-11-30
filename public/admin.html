@@ -1367,6 +1367,8 @@ function createReportCard(report) {
     const description = escapeHtml(report.description || 'Aucune description');
     const location = escapeHtml(report.location || 'Non spécifié');
     const incidentDate = report.incident_date ? new Date(report.incident_date).toLocaleDateString('fr-FR') : 'Non spécifiée';
+    const witnesses = escapeHtml(report.witnesses || 'Aucun');
+    const additionalInfo = escapeHtml(report.additional_info || '');
 
     return `
         <div class="report-card ${report.status === 'pending' ? 'urgent' : ''}" data-report-id="${report.id}">
@@ -1375,21 +1377,31 @@ function createReportCard(report) {
                     <div class="report-code">${escapeHtml(report.tracking_code)}</div>
                     <span class="report-type ${typeClass}">${escapeHtml(report.incident_type || 'Autre')}</span>
                 </div>
-                <div class="report-date">📅 Signalé le ${date} à ${time}</div>
-            </div>
-            <div class="report-info" style="display: flex; gap: 15px; margin: 10px 0; font-size: 0.9em; color: #666;">
-                <span>📍 <strong>Lieu:</strong> ${location}</span>
-                <span>🗓️ <strong>Date incident:</strong> ${incidentDate}</span>
-            </div>
-            <div class="report-description" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 3px solid #667eea;">
-                <strong style="color: #667eea;">📋 Description:</strong>
-                <p style="margin: 5px 0 0 0;">${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</p>
-            </div>
-            <div class="report-footer">
                 <span class="status-badge ${statusClass}">${statusText}</span>
+            </div>
+            
+            <div class="report-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                <div><strong>📅 Signalé:</strong> ${date} à ${time}</div>
+                <div><strong>🗓️ Date incident:</strong> ${incidentDate}</div>
+                <div><strong>📍 Lieu:</strong> ${location}</div>
+                <div><strong>👥 Témoins:</strong> ${witnesses}</div>
+            </div>
+            
+            <div class="report-description" style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 15px;">
+                <strong style="color: #667eea; display: block; margin-bottom: 8px;">📋 Description du signalement:</strong>
+                <p style="margin: 0; line-height: 1.6; color: #333;">${description}</p>
+                ${additionalInfo ? '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd;"><strong style="color: #888;">ℹ️ Infos supplémentaires:</strong> ' + additionalInfo + '</div>' : ''}
+            </div>
+            
+            <div class="report-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div class="status-actions" style="display: flex; gap: 8px;">
+                    <button class="btn ${report.status === 'pending' ? 'btn-active' : ''}" data-action="status" data-id="${report.id}" data-status="pending" style="padding: 8px 12px; border-radius: 20px; border: 2px solid #ffc107; background: ${report.status === 'pending' ? '#ffc107' : 'white'}; color: ${report.status === 'pending' ? 'white' : '#ffc107'}; cursor: pointer;">⏳ En attente</button>
+                    <button class="btn ${report.status === 'in-progress' ? 'btn-active' : ''}" data-action="status" data-id="${report.id}" data-status="in-progress" style="padding: 8px 12px; border-radius: 20px; border: 2px solid #17a2b8; background: ${report.status === 'in-progress' ? '#17a2b8' : 'white'}; color: ${report.status === 'in-progress' ? 'white' : '#17a2b8'}; cursor: pointer;">🔄 En cours</button>
+                    <button class="btn ${report.status === 'resolved' ? 'btn-active' : ''}" data-action="status" data-id="${report.id}" data-status="resolved" style="padding: 8px 12px; border-radius: 20px; border: 2px solid #28a745; background: ${report.status === 'resolved' ? '#28a745' : 'white'}; color: ${report.status === 'resolved' ? 'white' : '#28a745'}; cursor: pointer;">✅ Résolu</button>
+                </div>
                 <div class="action-btns">
-                    <button class="btn btn-view" data-action="view" data-id="${report.id}">👁️ Détails</button>
-                    <button class="btn btn-reply" data-action="reply" data-id="${report.id}">💬 Répondre</button>
+                    <button class="btn btn-view" data-action="view" data-id="${report.id}" style="padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">👁️ Voir détails</button>
+                    <button class="btn btn-reply" data-action="discuss" data-id="${report.id}" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">💬 Discuter</button>
                 </div>
             </div>
         </div>
@@ -1409,7 +1421,7 @@ function attachReportCardEvents() {
         });
     });
     
-    // Boutons voir
+    // Boutons voir détails
     document.querySelectorAll('button[data-action="view"]').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -1419,15 +1431,60 @@ function attachReportCardEvents() {
         });
     });
     
-    // Boutons répondre
-    document.querySelectorAll('button[data-action="reply"]').forEach(btn => {
+    // Boutons discuter
+    document.querySelectorAll('button[data-action="discuss"]').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             const reportId = this.getAttribute('data-id');
-            console.log('[ADMIN] Bouton répondre:', reportId);
-            viewReportDetails(reportId);
+            console.log('[ADMIN] Bouton discuter:', reportId);
+            openDiscussionModal(reportId);
         });
     });
+    
+    // Boutons de statut
+    document.querySelectorAll('button[data-action="status"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const reportId = this.getAttribute('data-id');
+            const newStatus = this.getAttribute('data-status');
+            console.log('[ADMIN] Changer statut:', reportId, '->', newStatus);
+            updateReportStatus(reportId, newStatus);
+        });
+    });
+}
+
+// Mettre à jour le statut d'un signalement
+function updateReportStatus(reportId, newStatus) {
+    fetch(CONFIG.API_URL + '/api/admin/reports/' + reportId + '/status', {
+        method: 'PATCH',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const statusLabels = {'pending': '⏳ En attente', 'in-progress': '🔄 En cours', 'resolved': '✅ Résolu'};
+            alert('✅ Statut mis à jour: ' + statusLabels[newStatus]);
+            loadAllReports(); // Recharger la liste
+        } else {
+            alert('❌ Erreur: ' + (data.error || 'Impossible de mettre à jour'));
+        }
+    })
+    .catch(err => {
+        console.error('[ADMIN] Erreur:', err);
+        alert('❌ Erreur: ' + err.message);
+    });
+}
+
+// Ouvrir la modal de discussion
+function openDiscussionModal(reportId) {
+    // Naviguer vers la section discussions et ouvrir ce signalement
+    const menuItem = document.querySelector('.menu-item[data-section="discussions"]');
+    showSection('discussions', menuItem);
+    setTimeout(() => viewReportDetails(reportId), 500);
 }
 
 // TOUS LES SIGNALEMENTS
