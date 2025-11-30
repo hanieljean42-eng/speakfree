@@ -6,19 +6,28 @@ const path = require('path');
 const fs = require('fs');
 
 // Configuration Multer pour les fichiers (photos/vidéos)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '..', 'uploads', 'reports');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+// Utiliser memoryStorage pour la production (Render)
+let storage;
+
+if (process.env.NODE_ENV === 'production') {
+    // En production, stocker en mémoire temporairement
+    storage = multer.memoryStorage();
+} else {
+    // En local, stocker sur disque
+    storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            const uploadPath = path.join(__dirname, '..', 'uploads', 'reports');
+            if (!fs.existsSync(uploadPath)) {
+                fs.mkdirSync(uploadPath, { recursive: true });
+            }
+            cb(null, uploadPath);
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, uniqueSuffix + path.extname(file.originalname));
         }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+    });
+}
 
 const upload = multer({
     storage: storage,
@@ -222,21 +231,28 @@ function getSession(sessionCode) {
 
 // POST /api/ai-chat/create-session - Créer une nouvelle session
 router.post('/create-session', async (req, res) => {
+    console.log('[AI-CHAT] Création de session demandée');
+    
     const db = req.db;
     
     // Vérifier que la base est disponible
     if (!db) {
-        console.error('[AI-CHAT] Base de données non disponible');
-        return res.status(503).json({ error: 'Base de données non disponible' });
+        console.error('[AI-CHAT] ❌ Base de données non disponible');
+        return res.status(503).json({ 
+            error: 'Service temporairement indisponible',
+            message: 'La base de données n\'est pas encore prête. Réessayez dans quelques secondes.'
+        });
     }
     
     try {
         const sessionCode = generateSessionCode();
+        console.log('[AI-CHAT] Code session généré:', sessionCode);
         
         const [result] = await db.execute(
             `INSERT INTO ai_chat_sessions (session_id, status) VALUES (?, 'active')`,
             [sessionCode]
         );
+        console.log('[AI-CHAT] Session insérée, ID:', result.insertId);
         
         // Initialiser la session en mémoire
         getSession(sessionCode);
@@ -246,6 +262,7 @@ router.post('/create-session', async (req, res) => {
             `INSERT INTO ai_chat_messages (session_id, sender, message) VALUES (?, 'assistant', ?)`,
             [result.insertId, MESSAGES.welcome]
         );
+        console.log('[AI-CHAT] ✅ Session créée avec succès');
         
         res.status(201).json({
             success: true,
@@ -255,10 +272,11 @@ router.post('/create-session', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Erreur create session:', error);
+        console.error('[AI-CHAT] ❌ Erreur create session:', error.message);
+        console.error('[AI-CHAT] Stack:', error.stack);
         res.status(500).json({ 
-            error: 'Erreur serveur', 
-            details: process.env.NODE_ENV !== 'production' ? error.message : undefined 
+            error: 'Erreur serveur',
+            message: error.message
         });
     }
 });

@@ -1,7 +1,12 @@
 // config.js - Configuration centralisée de l'API
 // Utilisé par tous les fichiers frontend
+// Version: 2.0 - 30 Nov 2025
 
 console.log('[CONFIG] Initialisation...');
+
+// URLs de production - À MODIFIER SI CHANGEMENT
+const PRODUCTION_API_URL = 'https://speakfree-m9xv.onrender.com';
+const PRODUCTION_FRONTEND_URL = 'https://speakfree-school.netlify.app';
 
 // Déterminer l'URL de base selon l'environnement
 function getApiUrl() {
@@ -15,19 +20,14 @@ function getApiUrl() {
         return 'http://localhost:3000';
     }
     
-    // Production sur Netlify → API sur Render
-    if (hostname.includes('netlify.app') || hostname.includes('speakfree')) {
-        return 'https://speakfree-m9xv.onrender.com';
-    }
-    
-    // Production sur domaine personnalisé
-    // Si le frontend et backend sont sur le même domaine
-    if (protocol === 'https:') {
-        return 'https://api.' + hostname;
-    }
-    
-    // Fallback: même domaine
-    return window.location.origin;
+    // Production - Toujours utiliser l'URL Render
+    return PRODUCTION_API_URL;
+}
+
+// Vérifier si on est en production
+function isProduction() {
+    const hostname = window.location.hostname;
+    return hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '::1';
 }
 
 const CONFIG = {
@@ -169,13 +169,24 @@ async function apiCall(endpoint, options = {}) {
  */
 async function checkBackendHealth() {
     try {
-        console.log('[HEALTH] Vérification...');
-        const response = await fetch(CONFIG.API_URL + '/api/schools/stats/global');
+        console.log('[HEALTH] Vérification de', CONFIG.API_URL);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(CONFIG.API_URL + '/api/schools/stats/global', {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         const ok = response.ok;
-        console.log(`[HEALTH] ${ok ? '✅ OK' : '❌ FAIL'}`);
+        console.log(`[HEALTH] ${ok ? '✅ Backend OK' : '❌ Backend FAIL (status ' + response.status + ')'}`);
         return ok;
     } catch (err) {
-        console.error('[HEALTH] Erreur:', err.message);
+        if (err.name === 'AbortError') {
+            console.error('[HEALTH] ⏱️ Timeout - Le serveur ne répond pas');
+        } else {
+            console.error('[HEALTH] ❌ Erreur:', err.message);
+        }
         return false;
     }
 }
@@ -207,6 +218,30 @@ async function apiGetStats() {
     return apiCall(CONFIG.ENDPOINTS.schools.stats);
 }
 
+/**
+ * Afficher un message d'erreur utilisateur
+ */
+function showError(message, containerId = 'errorAlert') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+        container.style.display = 'block';
+    }
+    console.error('[ERROR]', message);
+}
+
+/**
+ * Afficher un message de succès
+ */
+function showSuccess(message, containerId = 'successAlert') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `<div class="success-message">✅ ${message}</div>`;
+        container.style.display = 'block';
+    }
+    console.log('[SUCCESS]', message);
+}
+
 // Exporter pour utilisation globale
 window.CONFIG = CONFIG;
 window.apiCall = apiCall;
@@ -214,6 +249,12 @@ window.checkBackendHealth = checkBackendHealth;
 window.apiLogin = apiLogin;
 window.apiLogout = apiLogout;
 window.apiGetStats = apiGetStats;
+window.showError = showError;
+window.showSuccess = showSuccess;
+window.isProduction = isProduction;
+window.PRODUCTION_API_URL = PRODUCTION_API_URL;
 
 console.log('[CONFIG] ✅ Chargé');
 console.log(`[CONFIG] API_URL = ${CONFIG.API_URL}`);
+console.log(`[CONFIG] Production = ${isProduction()}`);
+

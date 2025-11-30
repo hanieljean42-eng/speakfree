@@ -282,10 +282,13 @@ app.use((req, res, next) => {
     next();
 });
 
-// Rendre le pool MySQL accessible aux routes via app.locals
-app.locals.db = null;
+// Middleware pour passer le pool MySQL aux routes
+// Le pool est stocké dans app.locals.db après initDatabase()
 app.use((req, res, next) => {
-    req.db = app.locals.db;
+    req.db = app.locals.db || pool;
+    if (!req.db) {
+        console.warn('[MIDDLEWARE] DB non disponible pour', req.path);
+    }
     next();
 });
 

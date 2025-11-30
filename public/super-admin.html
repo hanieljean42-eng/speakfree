@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#c0392b">
     <link rel="stylesheet" href="/styles-mobile.css">
     <title>Super Admin - SpeakFree</title>
+    <!-- Charger config.js en premier -->
+    <script src="/config.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #c0392b; min-height: 100vh; }
@@ -150,12 +152,8 @@
     'use strict';
     
     // ===== CONFIGURATION =====
-    // Déterminer l'URL API selon l'environnement
-    var hostname = window.location.hostname;
-    var API = 'http://localhost:3000';
-    if (hostname.includes('netlify.app') || hostname.includes('speakfree')) {
-        API = 'https://speakfree-m9xv.onrender.com';
-    }
+    // Utiliser config.js global
+    var API = (typeof CONFIG !== 'undefined') ? CONFIG.API_URL : 'https://speakfree-m9xv.onrender.com';
     console.log('[SUPER-ADMIN] API URL:', API);
     
     var CODE = '200700';
