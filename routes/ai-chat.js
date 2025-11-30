@@ -224,6 +224,12 @@ function getSession(sessionCode) {
 router.post('/create-session', async (req, res) => {
     const db = req.db;
     
+    // Vérifier que la base est disponible
+    if (!db) {
+        console.error('[AI-CHAT] Base de données non disponible');
+        return res.status(503).json({ error: 'Base de données non disponible' });
+    }
+    
     try {
         const sessionCode = generateSessionCode();
         
