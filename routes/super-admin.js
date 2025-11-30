@@ -58,13 +58,32 @@ router.post('/verify-code', (req, res) => {
 router.get('/stats', async (req, res) => {
     const db = req.db;
     
+    if (!db) {
+        console.error('[SUPER-ADMIN] DB non disponible pour /stats');
+        return res.status(503).json({ error: 'Service temporairement indisponible' });
+    }
+    
     try {
         const [[{ totalSchools }]] = await db.execute('SELECT COUNT(*) as totalSchools FROM schools');
         const [[{ activeSchools }]] = await db.execute('SELECT COUNT(*) as activeSchools FROM schools WHERE status = "active"');
         const [[{ pendingSchools }]] = await db.execute('SELECT COUNT(*) as pendingSchools FROM schools WHERE status = "pending"');
         const [[{ totalReports }]] = await db.execute('SELECT COUNT(*) as totalReports FROM reports');
         const [[{ pendingReports }]] = await db.execute('SELECT COUNT(*) as pendingReports FROM reports WHERE status = "pending"');
-        const [[{ totalAdmins }]] = await db.execute('SELECT COUNT(*) as totalAdmins FROM admins');
+        
+        // Compter les admins - utiliser users au lieu de admins si la table n'existe pas
+        let totalAdmins = 0;
+        try {
+            const [[result]] = await db.execute('SELECT COUNT(*) as totalAdmins FROM admins');
+            totalAdmins = result.totalAdmins;
+        } catch (e) {
+            // Table admins n'existe peut-être pas, essayer users
+            try {
+                const [[result]] = await db.execute('SELECT COUNT(*) as totalAdmins FROM users WHERE role = "admin"');
+                totalAdmins = result.totalAdmins;
+            } catch (e2) {
+                totalAdmins = 0;
+            }
+        }
         
         res.json({
             totalSchools,
@@ -76,8 +95,8 @@ router.get('/stats', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Erreur stats:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        console.error('[SUPER-ADMIN] Erreur stats:', error.message);
+        res.status(500).json({ error: 'Erreur serveur', message: error.message });
     }
 });
 
