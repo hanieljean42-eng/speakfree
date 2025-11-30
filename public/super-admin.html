@@ -98,7 +98,14 @@
     'use strict';
     
     // ===== CONFIGURATION =====
+    // Déterminer l'URL API selon l'environnement
+    var hostname = window.location.hostname;
     var API = 'http://localhost:3000';
+    if (hostname.includes('netlify.app') || hostname.includes('speakfree')) {
+        API = 'https://speakfree-m9xv.onrender.com';
+    }
+    console.log('[SUPER-ADMIN] API URL:', API);
+    
     var CODE = '200700';
     var currentTab = 'pending';
     
