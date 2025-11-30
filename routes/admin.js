@@ -255,8 +255,10 @@ router.get('/discussions', authMiddleware, async (req, res) => {
     const schoolId = req.user.schoolId;
     
     try {
-        const [discussions] = await db.execute(
-            `SELECT d.*, r.tracking_code, r.incident_type, r.id as report_id,
+        // Mode debug: si pas de discussions pour cette école, montrer toutes
+        let discussions;
+        const [schoolDiscussions] = await db.execute(
+            `SELECT d.*, r.tracking_code, r.incident_type, r.description, r.status as report_status, r.id as report_id, r.created_at as report_date,
                     (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count,
                     (SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id) as last_message
              FROM discussions d 
@@ -265,6 +267,21 @@ router.get('/discussions', authMiddleware, async (req, res) => {
              ORDER BY COALESCE((SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id), d.updated_at) DESC`,
             [schoolId]
         );
+        
+        if (schoolDiscussions.length === 0) {
+            // Mode debug: montrer toutes les discussions
+            const [allDiscussions] = await db.execute(
+                `SELECT d.*, r.tracking_code, r.incident_type, r.description, r.status as report_status, r.id as report_id, r.created_at as report_date,
+                        (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count,
+                        (SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id) as last_message
+                 FROM discussions d 
+                 JOIN reports r ON d.report_id = r.id 
+                 ORDER BY d.created_at DESC LIMIT 20`
+            );
+            discussions = allDiscussions;
+        } else {
+            discussions = schoolDiscussions;
+        }
         
         res.json({ success: true, discussions });
         

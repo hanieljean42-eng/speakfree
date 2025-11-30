@@ -1364,7 +1364,9 @@ function createReportCard(report) {
     const typeClass = 'type-' + (report.incident_type || 'autre');
     const date = new Date(report.created_at).toLocaleDateString('fr-FR');
     const time = new Date(report.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    const description = escapeHtml(report.description || '');
+    const description = escapeHtml(report.description || 'Aucune description');
+    const location = escapeHtml(report.location || 'Non spécifié');
+    const incidentDate = report.incident_date ? new Date(report.incident_date).toLocaleDateString('fr-FR') : 'Non spécifiée';
 
     return `
         <div class="report-card ${report.status === 'pending' ? 'urgent' : ''}" data-report-id="${report.id}">
@@ -1373,15 +1375,20 @@ function createReportCard(report) {
                     <div class="report-code">${escapeHtml(report.tracking_code)}</div>
                     <span class="report-type ${typeClass}">${escapeHtml(report.incident_type || 'Autre')}</span>
                 </div>
-                <div class="report-date">${date} à ${time}</div>
+                <div class="report-date">📅 Signalé le ${date} à ${time}</div>
             </div>
-            <div class="report-description">
-                ${description.substring(0, 150)}${description.length > 150 ? '...' : ''}
+            <div class="report-info" style="display: flex; gap: 15px; margin: 10px 0; font-size: 0.9em; color: #666;">
+                <span>📍 <strong>Lieu:</strong> ${location}</span>
+                <span>🗓️ <strong>Date incident:</strong> ${incidentDate}</span>
+            </div>
+            <div class="report-description" style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 3px solid #667eea;">
+                <strong style="color: #667eea;">📋 Description:</strong>
+                <p style="margin: 5px 0 0 0;">${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</p>
             </div>
             <div class="report-footer">
                 <span class="status-badge ${statusClass}">${statusText}</span>
                 <div class="action-btns">
-                    <button class="btn btn-view" data-action="view" data-id="${report.id}">👁️ Voir</button>
+                    <button class="btn btn-view" data-action="view" data-id="${report.id}">👁️ Détails</button>
                     <button class="btn btn-reply" data-action="reply" data-id="${report.id}">💬 Répondre</button>
                 </div>
             </div>
@@ -1831,12 +1838,19 @@ function loadDiscussions() {
         container.innerHTML = data.discussions.map(d => `
             <div class="report-card" data-report-id="${d.report_id}">
                 <div class="report-header">
-                    <div><div class="report-code">${escapeHtml(d.tracking_code)}</div></div>
+                    <div>
+                        <div class="report-code">${escapeHtml(d.tracking_code)}</div>
+                        <span class="report-type">${escapeHtml(d.incident_type || 'Non spécifié')}</span>
+                    </div>
                     <div class="report-date">${d.last_message ? new Date(d.last_message).toLocaleString('fr-FR') : 'Aucun message'}</div>
+                </div>
+                <div class="report-body" style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #667eea;">
+                    <strong style="color: #667eea;">📋 Motif:</strong>
+                    <p style="margin: 5px 0 0 0; color: #555; font-size: 0.95em;">${escapeHtml((d.description || 'Aucune description').substring(0, 150))}${(d.description && d.description.length > 150) ? '...' : ''}</p>
                 </div>
                 <div class="report-footer">
                     <span>${d.message_count || 0} message(s)</span>
-                    <button class="btn btn-view" data-action="open-discussion" data-id="${d.report_id}">💬 Ouvrir</button>
+                    <button class="btn btn-view" data-action="open-discussion" data-id="${d.report_id}">💬 Discuter</button>
                 </div>
             </div>
         `).join('');
