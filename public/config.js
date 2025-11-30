@@ -1,12 +1,11 @@
 // config.js - Configuration centralisée de l'API
 // Utilisé par tous les fichiers frontend
-// Version: 2.0 - 30 Nov 2025
+// Version: 2.1 - 30 Nov 2025 - Support Cloudflare Pages
 
 console.log('[CONFIG] Initialisation...');
 
 // URLs de production - À MODIFIER SI CHANGEMENT
 const PRODUCTION_API_URL = 'https://speakfree-m9xv.onrender.com';
-const PRODUCTION_FRONTEND_URL = 'https://speakfree-school.netlify.app';
 
 // Déterminer l'URL de base selon l'environnement
 function getApiUrl() {
@@ -20,7 +19,7 @@ function getApiUrl() {
         return 'http://localhost:3000';
     }
     
-    // Production - Toujours utiliser l'URL Render
+    // Production (Cloudflare, Netlify, ou autre) - Toujours utiliser l'URL Render
     return PRODUCTION_API_URL;
 }
 

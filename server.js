@@ -254,12 +254,15 @@ const corsOptions = {
             'http://localhost:5500',          // Live Server VSCode
             'http://127.0.0.1:5500',
             'https://speakfree.netlify.app',  // Production Netlify
-            'https://speakfree-school.netlify.app',  // Production Netlify (votre site)
-            // Ajouter vos autres domaines ici
+            'https://speakfree-school.netlify.app',  // Production Netlify
+            // Cloudflare Pages sera ajouté automatiquement via les règles ci-dessous
         ];
         
         // Autoriser les requêtes sans origin (comme les applis mobiles ou Postman)
         if (!origin) return callback(null, true);
+        
+        // Autoriser tous les sous-domaines Cloudflare Pages (*.pages.dev)
+        if (origin.includes('.pages.dev')) return callback(null, true);
         
         // Autoriser tous les sous-domaines netlify.app
         if (origin.includes('netlify.app')) return callback(null, true);
