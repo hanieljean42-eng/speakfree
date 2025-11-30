@@ -6,7 +6,31 @@
 
 ---
 
-## 🚀 Démarrage Rapide
+## 🌐 Déploiement
+
+### Architecture Production
+- **Frontend** : Netlify (fichiers statiques dans `/public/`)
+- **Backend** : Render (serveur Node.js)
+- **Base de données** : MySQL (PlanetScale, Railway, ou autre)
+
+### Configuration de Déploiement
+
+#### Frontend sur Netlify
+1. Connectez votre repo GitHub à Netlify
+2. Le fichier `netlify.toml` configure automatiquement le build
+3. Mettez à jour l'URL backend dans `public/config.js`
+
+#### Backend sur Render
+1. Connectez votre repo GitHub à Render
+2. Le fichier `render.yaml` configure automatiquement le service
+3. Ajoutez les variables d'environnement dans le dashboard Render :
+   - `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
+   - `JWT_SECRET`, `SUPER_ADMIN_CODE`
+   - `MYSQL_SSL=true` (pour les connexions sécurisées)
+
+---
+
+## 🚀 Démarrage Rapide (Local)
 
 ### Prérequis
 - Node.js v22.21.0

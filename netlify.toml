@@ -1,0 +1,50 @@
+# Configuration Netlify pour SpeakFree
+# Frontend déployé sur Netlify
+
+[build]
+  # Répertoire contenant les fichiers statiques
+  publish = "public"
+  # Pas de commande build nécessaire pour fichiers HTML statiques
+  command = "echo 'No build needed for static files'"
+
+# Redirection pour Single Page Application (optionnel si vous utilisez du routing client)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# Headers de sécurité
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Headers CORS pour permettre les appels API vers Render
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+
+# Cache pour les assets statiques
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Désactiver les fonctions Netlify (on n'en utilise pas)
+[functions]
+  directory = "netlify/functions"

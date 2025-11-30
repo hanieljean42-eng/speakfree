@@ -3,18 +3,33 @@
 
 console.log('[CONFIG] Initialisation...');
 
-// Déterminer l'URL de base
+// Déterminer l'URL de base selon l'environnement
 function getApiUrl() {
     const hostname = window.location.hostname;
-    console.log(`[CONFIG] Hostname: ${hostname}`);
+    const protocol = window.location.protocol;
     
+    console.log(`[CONFIG] Hostname: ${hostname}, Protocol: ${protocol}`);
+    
+    // Environnement local
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
         return 'http://localhost:3000';
     }
-    if (hostname.includes('netlify.app')) {
-        return 'https://speakfree-api.onrender.com';
+    
+    // Production sur Netlify → API sur Render
+    if (hostname.includes('netlify.app') || hostname.includes('speakfree')) {
+        // ⚠️ APRÈS DÉPLOIEMENT RENDER: Remplacez l'URL ci-dessous par votre vraie URL Render
+        // Exemple: https://speakfree-api.onrender.com ou https://votre-nom.onrender.com
+        return 'https://VOTRE-APP-RENDER.onrender.com';
     }
-    return window.location.protocol + '//' + hostname;
+    
+    // Production sur domaine personnalisé
+    // Si le frontend et backend sont sur le même domaine
+    if (protocol === 'https:') {
+        return 'https://api.' + hostname;
+    }
+    
+    // Fallback: même domaine
+    return window.location.origin;
 }
 
 const CONFIG = {
@@ -170,10 +185,10 @@ async function checkBackendHealth() {
 /**
  * Faire une authentification
  */
-async function apiLogin(email, password) {
+async function apiLogin(identifier, password) {
     return apiCall(CONFIG.ENDPOINTS.auth.login, {
         method: 'POST',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ identifier, password })
     });
 }
 

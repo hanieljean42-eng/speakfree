@@ -1,0 +1,34 @@
+# Configuration Render pour SpeakFree Backend
+# Backend Node.js déployé sur Render
+
+services:
+  - type: web
+    name: speakfree-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Ces variables doivent être définies manuellement dans le dashboard Render
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_DATABASE
+        sync: false
+      - key: MYSQL_PORT
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SUPER_ADMIN_CODE
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true
+    region: frankfurt
+    rootDir: .

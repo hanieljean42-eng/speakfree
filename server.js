@@ -1,128 +1,205 @@
-// server.js - Serveur Express Principal SpeakFree
+// server.js - Serveur Express Principal SpeakFree (MySQL)
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2/promise');
 
 // Créer l'application Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialiser la base de données
-const db = new sqlite3.Database(process.env.DATABASE_PATH || './database/speakfree.db', (err) => {
-    if (err) {
-        console.error('❌ Erreur connexion base de données:', err);
-    } else {
-        console.log('✅ Base de données connectée');
-        initDatabase();
-    }
-});
+// Pool de connexions MySQL
+let pool;
 
-// Fonction d'initialisation de la base de données
-function initDatabase() {
-    db.serialize(() => {
+// Initialiser la connexion MySQL
+async function initDatabase() {
+    try {
+        // Configuration de base
+        const dbConfig = {
+            host: process.env.MYSQL_HOST || 'localhost',
+            user: process.env.MYSQL_USER || 'root',
+            password: process.env.MYSQL_PASSWORD || '',
+            database: process.env.MYSQL_DATABASE || 'speakfree',
+            port: parseInt(process.env.MYSQL_PORT) || 3306,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
+        };
+        
+        // Ajouter SSL pour la production (si configuré)
+        if (process.env.MYSQL_SSL === 'true' || process.env.NODE_ENV === 'production') {
+            dbConfig.ssl = {
+                rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== 'false'
+            };
+        }
+        
+        pool = mysql.createPool(dbConfig);
+
+        // Tester la connexion
+        const connection = await pool.getConnection();
+        console.log('✅ Base de données MySQL connectée');
+        console.log(`   Host: ${dbConfig.host}, Database: ${dbConfig.database}`);
+        connection.release();
+
+        // Stocker le pool dans app.locals pour les routes
+        app.locals.db = pool;
+
+        // Créer les tables
+        await createTables();
+        
+    } catch (err) {
+        console.error('❌ Erreur connexion MySQL:', err.message);
+        console.log('\n💡 Assurez-vous que MySQL est installé et configuré.');
+        console.log('   Variables à définir dans .env :');
+        console.log('   MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE\n');
+        process.exit(1);
+    }
+}
+
+// Créer les tables si elles n'existent pas
+async function createTables() {
+    const queries = [
         // Table des écoles
-        db.run(`CREATE TABLE IF NOT EXISTS schools (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            school_code TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            type TEXT NOT NULL,
-            city TEXT NOT NULL,
-            district TEXT,
+        `CREATE TABLE IF NOT EXISTS schools (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            school_code VARCHAR(50) UNIQUE NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            type VARCHAR(100) NOT NULL,
+            city VARCHAR(100) NOT NULL,
+            district VARCHAR(100),
             address TEXT NOT NULL,
-            student_count INTEGER,
-            status TEXT DEFAULT 'pending',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
+            student_count INT,
+            status VARCHAR(20) DEFAULT 'pending',
+            motivation TEXT,
+            existing_system VARCHAR(100),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`,
 
         // Table des administrateurs
-        db.run(`CREATE TABLE IF NOT EXISTS admins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            school_id INTEGER NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            first_name TEXT NOT NULL,
-            last_name TEXT NOT NULL,
-            position TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            is_super_admin BOOLEAN DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (school_id) REFERENCES schools(id)
-        )`);
+        `CREATE TABLE IF NOT EXISTS admins (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            school_id INT NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            first_name VARCHAR(100) NOT NULL,
+            last_name VARCHAR(100) NOT NULL,
+            position VARCHAR(100) NOT NULL,
+            phone VARCHAR(50) NOT NULL,
+            is_super_admin BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+        )`,
+
+        // Table des utilisateurs (pour l'authentification des admins)
+        `CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            school_id INT,
+            username VARCHAR(200) DEFAULT '',
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            first_name VARCHAR(100) DEFAULT '',
+            last_name VARCHAR(100) DEFAULT '',
+            position VARCHAR(100) DEFAULT 'Administrateur',
+            phone VARCHAR(50) DEFAULT '',
+            role VARCHAR(20) DEFAULT 'admin',
+            is_super_admin TINYINT(1) DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL
+        )`,
 
         // Table des signalements
-        db.run(`CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            school_id INTEGER NOT NULL,
-            tracking_code TEXT UNIQUE NOT NULL,
-            discussion_code TEXT UNIQUE NOT NULL,
-            incident_type TEXT NOT NULL,
+        `CREATE TABLE IF NOT EXISTS reports (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            school_id INT NOT NULL,
+            tracking_code VARCHAR(50) UNIQUE NOT NULL,
+            discussion_code VARCHAR(50) UNIQUE NOT NULL,
+            incident_type VARCHAR(100) NOT NULL,
             description TEXT NOT NULL,
-            incident_date DATE NOT NULL,
+            incident_date DATE,
             incident_time TIME,
-            location TEXT NOT NULL,
+            location VARCHAR(255),
             witnesses TEXT,
             additional_info TEXT,
-            status TEXT DEFAULT 'pending',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (school_id) REFERENCES schools(id)
-        )`);
+            status VARCHAR(20) DEFAULT 'pending',
+            from_chat_session VARCHAR(50),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+        )`,
 
         // Table des fichiers joints
-        db.run(`CREATE TABLE IF NOT EXISTS report_files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            report_id INTEGER NOT NULL,
-            filename TEXT NOT NULL,
-            original_name TEXT NOT NULL,
-            file_type TEXT NOT NULL,
-            file_size INTEGER NOT NULL,
+        `CREATE TABLE IF NOT EXISTS report_files (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            report_id INT NOT NULL,
+            filename VARCHAR(255) NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            file_type VARCHAR(100) NOT NULL,
+            file_size INT NOT NULL,
             file_path TEXT NOT NULL,
-            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (report_id) REFERENCES reports(id)
-        )`);
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+        )`,
 
         // Table des discussions
-        db.run(`CREATE TABLE IF NOT EXISTS discussions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            report_id INTEGER NOT NULL,
-            sender_type TEXT NOT NULL,
-            message TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (report_id) REFERENCES reports(id)
-        )`);
+        `CREATE TABLE IF NOT EXISTS discussions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            report_id INT NOT NULL,
+            discussion_code VARCHAR(50) UNIQUE NOT NULL,
+            school_id INT NOT NULL,
+            status VARCHAR(20) DEFAULT 'open',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+        )`,
+
+        // Table des messages de discussion
+        `CREATE TABLE IF NOT EXISTS discussion_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            discussion_id INT NOT NULL,
+            sender VARCHAR(20) NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (discussion_id) REFERENCES discussions(id) ON DELETE CASCADE
+        )`,
 
         // Table des sessions chat IA
-        db.run(`CREATE TABLE IF NOT EXISTS ai_chat_sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_code TEXT UNIQUE NOT NULL,
-            school_id INTEGER,
-            status TEXT DEFAULT 'active',
-            report_data TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (school_id) REFERENCES schools(id)
-        )`);
-        
-        // Ajouter la colonne report_data si elle n'existe pas (migration)
-        db.run(`ALTER TABLE ai_chat_sessions ADD COLUMN report_data TEXT`, (err) => {
-            // Ignorer l'erreur si la colonne existe déjà
-        });
+        `CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            session_id VARCHAR(50) UNIQUE NOT NULL,
+            school_id INT,
+            status VARCHAR(20) DEFAULT 'active',
+            ended_at TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL
+        )`,
 
         // Table des messages chat IA
-        db.run(`CREATE TABLE IF NOT EXISTS ai_chat_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id INTEGER NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (session_id) REFERENCES ai_chat_sessions(id)
-        )`);
+        `CREATE TABLE IF NOT EXISTS ai_chat_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            session_id INT NOT NULL,
+            sender VARCHAR(20) NOT NULL,
+            message TEXT NOT NULL,
+            category VARCHAR(50),
+            file_path TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES ai_chat_sessions(id) ON DELETE CASCADE
+        )`
+    ];
 
-        console.log('✅ Tables de base de données créées/vérifiées');
-    });
+    for (const query of queries) {
+        try {
+            await pool.execute(query);
+        } catch (err) {
+            console.error('Erreur création table:', err.message);
+        }
+    }
+
+    console.log('✅ Tables de base de données créées/vérifiées');
 }
 
 // Middleware de sécurité
@@ -138,18 +215,50 @@ app.use(helmet({
     }
 }));
 
-// CORS - Accepter toutes les origines (frontend et Netlify)
-app.use(cors({
-    origin: true,  // Accepter toutes les origines
+// CORS - Configuration pour dev et production
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Origines autorisées
+        const allowedOrigins = [
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+            'http://localhost:5500',          // Live Server VSCode
+            'http://127.0.0.1:5500',
+            'https://speakfree.netlify.app',  // Production Netlify
+            // Ajouter vos autres domaines ici
+        ];
+        
+        // Autoriser les requêtes sans origin (comme les applis mobiles ou Postman)
+        if (!origin) return callback(null, true);
+        
+        // Autoriser tous les sous-domaines netlify.app
+        if (origin.includes('netlify.app')) return callback(null, true);
+        
+        // Autoriser tous les localhost
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
+        
+        // Vérifier la liste blanche
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        
+        // En production, autoriser aussi l'origin par défaut
+        if (process.env.NODE_ENV === 'production') {
+            return callback(null, true);
+        }
+        
+        callback(new Error('CORS non autorisé'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+};
+app.use(cors(corsOptions));
 
-// Rate limiting global - Limite augmentée pour le développement
+// Rate limiting
 const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 1000, // 1000 requêtes par minute (très permissif pour dev)
+    windowMs: 1 * 60 * 1000,
+    max: 1000,
     message: { error: 'Trop de requêtes, veuillez réessayer dans quelques secondes.' },
     standardHeaders: true,
     legacyHeaders: false
@@ -170,8 +279,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// Rendre la base de données accessible aux routes
-app.locals.db = db;
+// Rendre le pool MySQL accessible aux routes via app.locals
+app.locals.db = null;
+app.use((req, res, next) => {
+    req.db = app.locals.db;
+    next();
+});
 
 // Importer les routes
 const authRoutes = require('./routes/auth');
@@ -196,78 +309,28 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         message: 'SpeakFree API est en ligne',
+        database: 'MySQL',
         timestamp: new Date().toISOString()
     });
 });
 
 // Routes des pages HTML
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/welcome', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'welcome.html'));
-});
-
-app.get('/chat-ia', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'chat-ia.html'));
-});
-
-app.get('/report', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'report.html'));
-});
-
-app.get('/discussion', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'discussion.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-app.get('/super-admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'super-admin.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-app.get('/register-school', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'register-school.html'));
-});
-
-app.get('/reprendre-haniel', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'reprendre-haniel.html'));
-});
-
-app.get('/guide', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'guide.html'));
-});
-
-app.get('/about', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'about.html'));
-});
-
-app.get('/terms', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'terms.html'));
-});
-
-app.get('/schools', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'schools.html'));
-});
-
-app.get('/statistics', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'statistics.html'));
-});
-
-app.get('/schools-list', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'schools-list.html'));
-});
-
-app.get('/getting-started', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'getting-started.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/welcome', (req, res) => res.sendFile(path.join(__dirname, 'public', 'welcome.html')));
+app.get('/chat-ia', (req, res) => res.sendFile(path.join(__dirname, 'public', 'chat-ia.html')));
+app.get('/report', (req, res) => res.sendFile(path.join(__dirname, 'public', 'report.html')));
+app.get('/discussion', (req, res) => res.sendFile(path.join(__dirname, 'public', 'discussion.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/super-admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'super-admin.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/register-school', (req, res) => res.sendFile(path.join(__dirname, 'public', 'register-school.html')));
+app.get('/guide', (req, res) => res.sendFile(path.join(__dirname, 'public', 'guide.html')));
+app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public', 'about.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'terms.html')));
+app.get('/schools', (req, res) => res.sendFile(path.join(__dirname, 'public', 'schools.html')));
+app.get('/statistics', (req, res) => res.sendFile(path.join(__dirname, 'public', 'statistics.html')));
+app.get('/schools-list', (req, res) => res.sendFile(path.join(__dirname, 'public', 'schools-list.html')));
+app.get('/getting-started', (req, res) => res.sendFile(path.join(__dirname, 'public', 'getting-started.html')));
 
 // Gestion des erreurs 404
 app.use((req, res) => {
@@ -288,8 +351,11 @@ app.use((err, req, res, next) => {
 });
 
 // Démarrer le serveur
-app.listen(PORT, () => {
-    console.log(`
+async function startServer() {
+    await initDatabase();
+    
+    app.listen(PORT, () => {
+        console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                                                       ║
 ║            💬 SpeakFree API Server                    ║
@@ -297,23 +363,24 @@ app.listen(PORT, () => {
 ║   🚀 Serveur démarré sur http://localhost:${PORT}     ║
 ║   📅 ${new Date().toLocaleString('fr-FR')}            ║
 ║   🔒 Mode: ${process.env.NODE_ENV || 'development'}   ║
+║   🗄️  Base: MySQL                                     ║
 ║   👨‍💻 Par: Haniel DJEBLE                               ║
 ║                                                       ║
 ╚═══════════════════════════════════════════════════════╝
-    `);
-});
+        `);
+    });
+}
 
 // Gestion de l'arrêt propre
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     console.log('\n👋 Arrêt du serveur...');
-    db.close((err) => {
-        if (err) {
-            console.error('❌ Erreur fermeture DB:', err);
-        } else {
-            console.log('✅ Base de données fermée');
-        }
-        process.exit(0);
-    });
+    if (pool) {
+        await pool.end();
+        console.log('✅ Connexion MySQL fermée');
+    }
+    process.exit(0);
 });
+
+startServer();
 
 module.exports = app;

@@ -199,6 +199,14 @@
             border-top: 2px solid #e9ecef;
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chat-input-row {
+            display: flex;
+            flex: 1;
+            gap: 12px;
+            min-width: 100%;
         }
 
         .chat-input {
@@ -215,6 +223,26 @@
             outline: none;
             border-color: #fd7e14;
             box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+        }
+
+        .file-btn {
+            padding: 15px 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .file-btn.has-files {
+            background: #28a745;
         }
 
         .send-btn {
@@ -237,6 +265,52 @@
         .send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .file-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .file-preview:empty {
+            display: none;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .file-item img {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .file-item .remove-file {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .info-box {
@@ -340,16 +414,23 @@
                 </div>
             </div>
 
+            <div class="file-preview" id="filePreview"></div>
             <div class="chat-input-container">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="messageInput" 
-                    placeholder="Écris ton message ici..."
-                >
-                <button class="send-btn" id="sendBtn">
-                    Envoyer 📤
-                </button>
+                <div class="chat-input-row">
+                    <button type="button" class="file-btn" id="fileBtn" title="Ajouter des photos/vidéos">
+                        📎
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display: none;">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="messageInput" 
+                        placeholder="Écris ton message ici..."
+                    >
+                    <button class="send-btn" id="sendBtn">
+                        Envoyer 📤
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -362,6 +443,7 @@
         let sessionCode = null;
         let sessionId = null;
         let currentStep = 0;
+        let uploadedFiles = [];
         let reportData = {
             incidentType: '',
             date: '',
@@ -415,6 +497,106 @@
                 });
                 input.focus();
                 console.log('[CHAT] Input attaché');
+            }
+            
+            // Bouton fichier
+            const fileBtn = document.getElementById('fileBtn');
+            const fileInput = document.getElementById('fileInput');
+            if (fileBtn && fileInput) {
+                fileBtn.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', function(e) {
+                    handleFileUpload(e.target.files);
+                });
+                console.log('[CHAT] Bouton fichier attaché');
+            }
+        }
+        
+        // Gérer l'upload de fichiers
+        function handleFileUpload(files) {
+            const filePreview = document.getElementById('filePreview');
+            const fileBtn = document.getElementById('fileBtn');
+            
+            Array.from(files).forEach(file => {
+                // Vérifier la taille (10 MB max)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`❌ Le fichier "${file.name}" est trop volumineux (max 10 MB)`);
+                    return;
+                }
+                
+                // Vérifier le type
+                if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+                    alert(`❌ Le fichier "${file.name}" n'est pas une image ou vidéo`);
+                    return;
+                }
+                
+                uploadedFiles.push(file);
+                
+                // Créer la prévisualisation
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.dataset.filename = file.name;
+                
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    fileItem.appendChild(img);
+                } else {
+                    const icon = document.createElement('span');
+                    icon.textContent = '🎥';
+                    fileItem.appendChild(icon);
+                }
+                
+                const name = document.createElement('span');
+                name.textContent = file.name.substring(0, 15) + (file.name.length > 15 ? '...' : '');
+                fileItem.appendChild(name);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-file';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = function() {
+                    removeFile(file.name);
+                };
+                fileItem.appendChild(removeBtn);
+                
+                filePreview.appendChild(fileItem);
+            });
+            
+            // Mettre à jour le bouton
+            if (uploadedFiles.length > 0) {
+                fileBtn.classList.add('has-files');
+                fileBtn.textContent = '📎 ' + uploadedFiles.length;
+            }
+            
+            // Afficher un message
+            if (files.length > 0) {
+                addMessage('bot', `📎 **${files.length} fichier(s) ajouté(s).**\n\nCes fichiers seront joints à ton signalement. Continue à discuter avec moi !`);
+            }
+        }
+        
+        // Supprimer un fichier
+        function removeFile(filename) {
+            uploadedFiles = uploadedFiles.filter(f => f.name !== filename);
+            
+            const filePreview = document.getElementById('filePreview');
+            const fileBtn = document.getElementById('fileBtn');
+            
+            // Supprimer de la prévisualisation
+            const items = filePreview.querySelectorAll('.file-item');
+            items.forEach(item => {
+                if (item.dataset.filename === filename) {
+                    item.remove();
+                }
+            });
+            
+            // Mettre à jour le bouton
+            if (uploadedFiles.length > 0) {
+                fileBtn.textContent = '📎 ' + uploadedFiles.length;
+            } else {
+                fileBtn.classList.remove('has-files');
+                fileBtn.textContent = '📎';
             }
         }
 
@@ -508,13 +690,32 @@
             
             console.log('[CHAT] Envoi au serveur...');
             
-            // Appel API
+            // Vérifier si c'est une confirmation avec des fichiers
+            const msgLower = message.toLowerCase();
+            const isConfirmation = (msgLower === 'oui' || msgLower === 'o' || msgLower === 'yes' || msgLower === 'ok' || msgLower === 'confirmer');
+            
+            if (isConfirmation && uploadedFiles.length > 0) {
+                // Envoyer le message puis uploader les fichiers
+                sendMessageToServer(message, function(data) {
+                    if (data.reportCreated && data.reportId) {
+                        // Uploader les fichiers
+                        uploadFilesToReport(data.reportId);
+                    }
+                });
+            } else {
+                sendMessageToServer(message);
+            }
+        }
+        
+        // Envoyer le message au serveur
+        function sendMessageToServer(message, callback) {
             fetch(CONFIG.API_URL + '/api/ai-chat/message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sessionCode: sessionCode,
-                    message: message
+                    message: message,
+                    hasFiles: uploadedFiles.length > 0
                 })
             })
             .then(res => res.json())
@@ -524,9 +725,18 @@
                 
                 if (data.message) {
                     addMessage('bot', data.message);
+                    
+                    // Si signalement créé, mentionner les fichiers
+                    if (data.reportCreated && uploadedFiles.length > 0) {
+                        setTimeout(() => {
+                            addMessage('bot', `📎 **${uploadedFiles.length} fichier(s)** ont été joints à ton signalement.`);
+                        }, 500);
+                    }
                 } else if (data.error) {
                     addMessage('bot', '❌ ' + data.error);
                 }
+                
+                if (callback) callback(data);
             })
             .catch(err => {
                 console.error('[CHAT] Erreur envoi:', err);
@@ -535,9 +745,41 @@
             })
             .finally(() => {
                 // Réactiver l'input
+                const input = document.getElementById('messageInput');
+                const sendBtn = document.getElementById('sendBtn');
                 input.disabled = false;
                 sendBtn.disabled = false;
                 input.focus();
+            });
+        }
+        
+        // Uploader les fichiers au signalement
+        function uploadFilesToReport(reportId) {
+            if (uploadedFiles.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('reportId', reportId);
+            uploadedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            fetch(CONFIG.API_URL + '/api/ai-chat/upload-files', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[CHAT] Fichiers uploadés:', data);
+                
+                // Réinitialiser les fichiers
+                uploadedFiles = [];
+                document.getElementById('filePreview').innerHTML = '';
+                const fileBtn = document.getElementById('fileBtn');
+                fileBtn.classList.remove('has-files');
+                fileBtn.textContent = '📎';
+            })
+            .catch(err => {
+                console.error('[CHAT] Erreur upload fichiers:', err);
             });
         }
 

@@ -365,11 +365,11 @@
 
                 <div class="form-group">
                     <label>📎 Photos ou Vidéos (optionnel)</label>
-                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    <div class="file-upload" id="fileZone">
                         <div class="icon">📸</div>
                         <p><strong>Clique ici pour ajouter des fichiers</strong></p>
                         <p style="font-size: 0.9em; color: #666;">Max 10 MB par fichier • Photos et vidéos acceptées</p>
-                        <input type="file" id="fileInput" multiple accept="image/*,video/*" onchange="handleFiles(this.files)">
+                        <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display:none;">
                     </div>
                     <div class="file-list" id="fileList"></div>
                 </div>
@@ -417,6 +417,16 @@
     <script>
         let uploadedFiles = [];
 
+        // Attacher l'événement de clic sur la zone de fichiers
+        document.getElementById('fileZone').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+        });
+        
+        // Attacher l'événement de changement de fichiers
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            handleFiles(e.target.files);
+        });
+
         // Gérer l'upload de fichiers
         function handleFiles(files) {
             const fileList = document.getElementById('fileList');
@@ -443,6 +453,8 @@
                 
                 fileList.appendChild(fileItem);
             });
+            
+            console.log('Fichiers ajoutés:', uploadedFiles.length);
         }
 
         function removeFile(fileName) {

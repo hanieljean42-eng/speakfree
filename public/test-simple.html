@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Simple</title>
+</head>
+<body>
+    <h1>Test des boutons</h1>
+    
+    <button onclick="test1()">TEST 1 - Alert simple</button>
+    <br><br>
+    <button onclick="test2()">TEST 2 - Fetch API</button>
+    <br><br>
+    <button onclick="test3()">TEST 3 - Désactiver école 1</button>
+    
+    <div id="result" style="margin-top: 20px; padding: 20px; background: #eee;"></div>
+    
+    <script>
+        function test1() {
+            alert('Le bouton fonctionne !');
+        }
+        
+        function test2() {
+            document.getElementById('result').innerHTML = 'Chargement...';
+            fetch('http://localhost:3000/api/super-admin/schools/active')
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                })
+                .catch(function(error) {
+                    document.getElementById('result').innerHTML = 'ERREUR: ' + error.message;
+                });
+        }
+        
+        function test3() {
+            if (!confirm('Désactiver école ID 1 ?')) return;
+            
+            document.getElementById('result').innerHTML = 'Envoi...';
+            
+            fetch('http://localhost:3000/api/super-admin/schools/1/deactivate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: '200700' })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                alert('Résultat: ' + (data.message || data.error));
+            })
+            .catch(function(error) {
+                document.getElementById('result').innerHTML = 'ERREUR: ' + error.message;
+                alert('ERREUR: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>

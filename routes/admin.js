@@ -1,393 +1,373 @@
-// routes/admin.js - Routes administrateur
+// routes/admin.js - Dashboard administrateur
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('./auth');
+const jwt = require('jsonwebtoken');
 
-// GET /api/admin/dashboard - Statistiques du dashboard
-router.get('/dashboard', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const schoolId = req.admin.schoolId;
+const JWT_SECRET = process.env.JWT_SECRET || 'speakfree_secret_key_2024';
+
+// Middleware d'authentification
+const authMiddleware = (req, res, next) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+        return res.status(401).json({ error: 'Token requis' });
+    }
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: 'Token invalide' });
+    }
+};
+
+// GET /api/admin/dashboard - Données du dashboard
+router.get('/dashboard', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
     
-    const stats = {};
+    console.log('[ADMIN] Dashboard pour school_id:', schoolId);
     
-    // Total signalements
-    db.get(
-        'SELECT COUNT(*) as count FROM reports WHERE school_id = ?',
-        [schoolId],
-        (err, result) => {
-            if (err) return res.status(500).json({ error: 'Erreur serveur' });
-            stats.total = result.count;
-            
-            // En attente
-            db.get(
-                'SELECT COUNT(*) as count FROM reports WHERE school_id = ? AND status = "pending"',
-                [schoolId],
-                (err, result) => {
-                    if (err) return res.status(500).json({ error: 'Erreur serveur' });
-                    stats.pending = result.count;
-                    
-                    // En cours
-                    db.get(
-                        'SELECT COUNT(*) as count FROM reports WHERE school_id = ? AND status = "in-progress"',
-                        [schoolId],
-                        (err, result) => {
-                            if (err) return res.status(500).json({ error: 'Erreur serveur' });
-                            stats.inProgress = result.count;
-                            
-                            // Résolus
-                            db.get(
-                                'SELECT COUNT(*) as count FROM reports WHERE school_id = ? AND status = "resolved"',
-                                [schoolId],
-                                (err, result) => {
-                                    if (err) return res.status(500).json({ error: 'Erreur serveur' });
-                                    stats.resolved = result.count;
-                                    
-                                    res.json(stats);
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        }
-    );
+    try {
+        const [[{ total }]] = await db.execute(
+            'SELECT COUNT(*) as total FROM reports WHERE school_id = ?',
+            [schoolId]
+        );
+        
+        const [[{ pending }]] = await db.execute(
+            'SELECT COUNT(*) as pending FROM reports WHERE school_id = ? AND status = "pending"',
+            [schoolId]
+        );
+        
+        const [[{ inProgress }]] = await db.execute(
+            'SELECT COUNT(*) as inProgress FROM reports WHERE school_id = ? AND status = "in-progress"',
+            [schoolId]
+        );
+        
+        const [[{ resolved }]] = await db.execute(
+            'SELECT COUNT(*) as resolved FROM reports WHERE school_id = ? AND status = "resolved"',
+            [schoolId]
+        );
+        
+        const [recentReports] = await db.execute(
+            `SELECT id, tracking_code, incident_type, status, created_at 
+             FROM reports WHERE school_id = ? ORDER BY created_at DESC LIMIT 5`,
+            [schoolId]
+        );
+        
+        console.log('[ADMIN] Stats:', { total, pending, inProgress, resolved });
+        
+        res.json({
+            success: true,
+            total,
+            pending,
+            inProgress,
+            resolved,
+            recentReports
+        });
+        
+    } catch (error) {
+        console.error('Erreur dashboard:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
 // GET /api/admin/reports - Liste des signalements
-router.get('/reports', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const schoolId = req.admin.schoolId;
-    const { status, limit = 50, offset = 0 } = req.query;
+router.get('/reports', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    const { status, page = 1, limit = 20 } = req.query;
     
-    let query = `
-        SELECT 
-            id, tracking_code, incident_type, description,
-            incident_date, incident_time, location, status,
-            created_at, updated_at
-        FROM reports
-        WHERE school_id = ?
-    `;
-    
-    const params = [schoolId];
-    
-    if (status) {
-        query += ' AND status = ?';
-        params.push(status);
-    }
-    
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
-    
-    db.all(query, params, (err, reports) => {
-        if (err) {
-            return res.status(500).json({ error: 'Erreur serveur' });
-        }
-        
-        // Compter le total pour la pagination
-        let countQuery = 'SELECT COUNT(*) as total FROM reports WHERE school_id = ?';
-        const countParams = [schoolId];
+    try {
+        let query = 'SELECT * FROM reports WHERE school_id = ?';
+        const params = [schoolId];
         
         if (status) {
-            countQuery += ' AND status = ?';
-            countParams.push(status);
+            query += ' AND status = ?';
+            params.push(status);
         }
         
-        db.get(countQuery, countParams, (err, count) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            res.json({
-                reports: reports || [],
-                total: count.total,
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
-        });
-    });
-});
-
-// GET /api/admin/reports/:reportId - Détails d'un signalement
-router.get('/reports/:reportId', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const { reportId } = req.params;
-    const schoolId = req.admin.schoolId;
-    
-    db.get(
-        `SELECT * FROM reports 
-         WHERE id = ? AND school_id = ?`,
-        [reportId, schoolId],
-        (err, report) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!report) {
-                return res.status(404).json({ error: 'Signalement non trouvé' });
-            }
-            
-            // Récupérer les fichiers
-            db.all(
-                'SELECT * FROM report_files WHERE report_id = ?',
-                [reportId],
-                (err, files) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur serveur' });
-                    }
-                    
-                    // Récupérer les messages de discussion
-                    db.all(
-                        'SELECT * FROM discussions WHERE report_id = ? ORDER BY created_at ASC',
-                        [reportId],
-                        (err, messages) => {
-                            if (err) {
-                                return res.status(500).json({ error: 'Erreur serveur' });
-                            }
-                            
-                            res.json({
-                                report,
-                                files: files || [],
-                                messages: messages || []
-                            });
-                        }
-                    );
-                }
-            );
-        }
-    );
-});
-
-// PATCH /api/admin/reports/:reportId/status - Changer le statut
-router.patch('/reports/:reportId/status', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const { reportId } = req.params;
-    const { status } = req.body;
-    const schoolId = req.admin.schoolId;
-    
-    const validStatuses = ['pending', 'in-progress', 'resolved'];
-    
-    if (!validStatuses.includes(status)) {
-        return res.status(400).json({ error: 'Statut invalide' });
+        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
+        
+        const [reports] = await db.execute(query, params);
+        
+        res.json({ success: true, reports });
+        
+    } catch (error) {
+        console.error('Erreur get reports:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
     }
-    
-    // Vérifier que le report appartient à l'école
-    db.get(
-        'SELECT id FROM reports WHERE id = ? AND school_id = ?',
-        [reportId, schoolId],
-        (err, report) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!report) {
-                return res.status(404).json({ error: 'Signalement non trouvé' });
-            }
-            
-            db.run(
-                'UPDATE reports SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [status, reportId],
-                (err) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur mise à jour' });
-                    }
-                    
-                    res.json({ 
-                        message: 'Statut mis à jour',
-                        status 
-                    });
-                }
-            );
-        }
-    );
 });
 
-// POST /api/admin/reports/:reportId/reply - Répondre à un signalement
-router.post('/reports/:reportId/reply', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const { reportId } = req.params;
+// GET /api/admin/reports/:id - Détails d'un signalement
+router.get('/reports/:id', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    const { id } = req.params;
+    
+    try {
+        const [reports] = await db.execute(
+            'SELECT * FROM reports WHERE id = ? AND school_id = ?',
+            [id, schoolId]
+        );
+        
+        if (reports.length === 0) {
+            return res.status(404).json({ error: 'Signalement non trouvé' });
+        }
+        
+        const [files] = await db.execute(
+            'SELECT * FROM report_files WHERE report_id = ?',
+            [id]
+        );
+        
+        // Récupérer les messages de la discussion
+        let messages = [];
+        const [discussions] = await db.execute(
+            'SELECT id FROM discussions WHERE report_id = ?',
+            [id]
+        );
+        
+        if (discussions.length > 0) {
+            const [msgs] = await db.execute(
+                `SELECT sender as sender_type, content as message, created_at 
+                 FROM discussion_messages 
+                 WHERE discussion_id = ? 
+                 ORDER BY created_at ASC`,
+                [discussions[0].id]
+            );
+            messages = msgs;
+        }
+        
+        res.json({
+            success: true,
+            report: reports[0],
+            files,
+            messages
+        });
+        
+    } catch (error) {
+        console.error('Erreur get report:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// PATCH /api/admin/reports/:id/status - Mettre à jour le statut
+router.patch('/reports/:id/status', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    try {
+        const [result] = await db.execute(
+            'UPDATE reports SET status = ? WHERE id = ? AND school_id = ?',
+            [status, id, schoolId]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Signalement non trouvé' });
+        }
+        
+        res.json({ success: true, message: 'Statut mis à jour' });
+        
+    } catch (error) {
+        console.error('Erreur update status:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// GET /api/admin/discussions - Liste des discussions
+router.get('/discussions', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    
+    try {
+        const [discussions] = await db.execute(
+            `SELECT d.*, r.tracking_code, r.incident_type, r.id as report_id,
+                    (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count,
+                    (SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id) as last_message
+             FROM discussions d 
+             JOIN reports r ON d.report_id = r.id 
+             WHERE d.school_id = ? 
+             ORDER BY COALESCE((SELECT MAX(created_at) FROM discussion_messages WHERE discussion_id = d.id), d.updated_at) DESC`,
+            [schoolId]
+        );
+        
+        res.json({ success: true, discussions });
+        
+    } catch (error) {
+        console.error('Erreur get discussions:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// GET /api/admin/statistics - Statistiques détaillées
+router.get('/statistics', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    
+    try {
+        const [byType] = await db.execute(
+            `SELECT incident_type, COUNT(*) as count 
+             FROM reports WHERE school_id = ? 
+             GROUP BY incident_type`,
+            [schoolId]
+        );
+        
+        const [byStatus] = await db.execute(
+            `SELECT status, COUNT(*) as count 
+             FROM reports WHERE school_id = ? 
+             GROUP BY status`,
+            [schoolId]
+        );
+        
+        const [byMonth] = await db.execute(
+            `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count 
+             FROM reports WHERE school_id = ? 
+             GROUP BY month ORDER BY month DESC LIMIT 12`,
+            [schoolId]
+        );
+        
+        res.json({
+            success: true,
+            byType,
+            byStatus,
+            byMonth
+        });
+        
+    } catch (error) {
+        console.error('Erreur statistics:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+});
+
+// POST /api/admin/reports/:id/reply - Répondre à un signalement
+router.post('/reports/:id/reply', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    const { id } = req.params;
     const { message } = req.body;
-    const schoolId = req.admin.schoolId;
     
     if (!message) {
         return res.status(400).json({ error: 'Message requis' });
     }
     
-    // Vérifier que le report appartient à l'école
-    db.get(
-        'SELECT id FROM reports WHERE id = ? AND school_id = ?',
-        [reportId, schoolId],
-        (err, report) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!report) {
-                return res.status(404).json({ error: 'Signalement non trouvé' });
-            }
-            
-            // Ajouter le message
-            db.run(
-                'INSERT INTO discussions (report_id, sender_type, message) VALUES (?, "school", ?)',
-                [reportId, message],
-                function(err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur envoi message' });
-                    }
-                    
-                    // Mettre à jour le statut si nécessaire
-                    db.run(
-                        'UPDATE reports SET status = "in-progress", updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = "pending"',
-                        [reportId]
-                    );
-                    
-                    res.status(201).json({
-                        message: 'Réponse envoyée',
-                        messageId: this.lastID
-                    });
-                }
+    try {
+        // Vérifier que le signalement appartient à cette école
+        const [reports] = await db.execute(
+            'SELECT id, discussion_code FROM reports WHERE id = ? AND school_id = ?',
+            [id, schoolId]
+        );
+        
+        if (reports.length === 0) {
+            return res.status(404).json({ error: 'Signalement non trouvé' });
+        }
+        
+        // Trouver ou créer la discussion
+        const [discussions] = await db.execute(
+            'SELECT id FROM discussions WHERE report_id = ?',
+            [id]
+        );
+        
+        let discussionId;
+        if (discussions.length === 0) {
+            // Créer la discussion
+            const [result] = await db.execute(
+                'INSERT INTO discussions (report_id, discussion_code, school_id, status) VALUES (?, ?, ?, "open")',
+                [id, reports[0].discussion_code, schoolId]
             );
+            discussionId = result.insertId;
+        } else {
+            discussionId = discussions[0].id;
         }
-    );
+        
+        // Ajouter le message
+        await db.execute(
+            'INSERT INTO discussion_messages (discussion_id, sender, content) VALUES (?, "school", ?)',
+            [discussionId, message]
+        );
+        
+        // Mettre à jour le statut si nécessaire
+        await db.execute(
+            'UPDATE reports SET status = "in-progress" WHERE id = ? AND status = "pending"',
+            [id]
+        );
+        
+        res.json({ success: true, message: 'Réponse envoyée' });
+        
+    } catch (error) {
+        console.error('Erreur reply:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
-// GET /api/admin/discussions - Liste des discussions actives
-router.get('/discussions', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const schoolId = req.admin.schoolId;
+// DELETE /api/admin/reports/:id - Supprimer un signalement
+router.delete('/reports/:id', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
+    const { id } = req.params;
     
-    db.all(
-        `SELECT 
-            reports.id, reports.tracking_code, reports.discussion_code,
-            reports.incident_type, reports.status, reports.created_at,
-            COUNT(discussions.id) as message_count,
-            MAX(discussions.created_at) as last_message
-         FROM reports
-         LEFT JOIN discussions ON reports.id = discussions.report_id
-         WHERE reports.school_id = ?
-         GROUP BY reports.id
-         HAVING message_count > 0
-         ORDER BY last_message DESC`,
-        [schoolId],
-        (err, discussions) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            res.json({ discussions: discussions || [] });
+    try {
+        // Vérifier que le signalement appartient à cette école
+        const [reports] = await db.execute(
+            'SELECT id FROM reports WHERE id = ? AND school_id = ?',
+            [id, schoolId]
+        );
+        
+        if (reports.length === 0) {
+            return res.status(404).json({ error: 'Signalement non trouvé' });
         }
-    );
+        
+        // Supprimer les fichiers associés
+        await db.execute('DELETE FROM report_files WHERE report_id = ?', [id]);
+        
+        // Supprimer les discussions associées
+        const [discussions] = await db.execute('SELECT id FROM discussions WHERE report_id = ?', [id]);
+        for (const disc of discussions) {
+            await db.execute('DELETE FROM discussion_messages WHERE discussion_id = ?', [disc.id]);
+        }
+        await db.execute('DELETE FROM discussions WHERE report_id = ?', [id]);
+        
+        // Supprimer le signalement
+        await db.execute('DELETE FROM reports WHERE id = ?', [id]);
+        
+        res.json({ success: true, message: 'Signalement supprimé' });
+        
+    } catch (error) {
+        console.error('Erreur delete:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
-// GET /api/admin/statistics - Statistiques avancées
-router.get('/statistics', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const schoolId = req.admin.schoolId;
-    const { period = '30' } = req.query; // Période en jours
+// GET /api/admin/team - Équipe de l'école
+router.get('/team', authMiddleware, async (req, res) => {
+    const db = req.db;
+    const schoolId = req.user.schoolId;
     
-    // Statistiques par type d'incident
-    db.all(
-        `SELECT incident_type, COUNT(*) as count
-         FROM reports
-         WHERE school_id = ? AND created_at >= date('now', '-' || ? || ' days')
-         GROUP BY incident_type`,
-        [schoolId, period],
-        (err, byType) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            // Statistiques par statut
-            db.all(
-                `SELECT status, COUNT(*) as count
-                 FROM reports
-                 WHERE school_id = ? AND created_at >= date('now', '-' || ? || ' days')
-                 GROUP BY status`,
-                [schoolId, period],
-                (err, byStatus) => {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur serveur' });
-                    }
-                    
-                    // Évolution dans le temps
-                    db.all(
-                        `SELECT date(created_at) as date, COUNT(*) as count
-                         FROM reports
-                         WHERE school_id = ? AND created_at >= date('now', '-' || ? || ' days')
-                         GROUP BY date(created_at)
-                         ORDER BY date ASC`,
-                        [schoolId, period],
-                        (err, timeline) => {
-                            if (err) {
-                                return res.status(500).json({ error: 'Erreur serveur' });
-                            }
-                            
-                            res.json({
-                                byType: byType || [],
-                                byStatus: byStatus || [],
-                                timeline: timeline || []
-                            });
-                        }
-                    );
-                }
+    try {
+        // Chercher dans la table admins
+        const [admins] = await db.execute(
+            `SELECT id, first_name, last_name, email, phone, position, created_at 
+             FROM admins WHERE school_id = ?`,
+            [schoolId]
+        );
+        
+        // Si pas d'admins, chercher dans users
+        if (admins.length === 0) {
+            const [users] = await db.execute(
+                `SELECT id, username as first_name, '' as last_name, email, '' as phone, role as position, created_at 
+                 FROM users WHERE school_id = ?`,
+                [schoolId]
             );
+            return res.json({ success: true, team: users });
         }
-    );
-});
-
-// GET /api/admin/team - Liste des administrateurs de l'école
-router.get('/team', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const schoolId = req.admin.schoolId;
-    
-    db.all(
-        `SELECT id, email, first_name, last_name, position, phone, created_at
-         FROM admins
-         WHERE school_id = ?
-         ORDER BY created_at ASC`,
-        [schoolId],
-        (err, team) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            res.json({ team: team || [] });
-        }
-    );
-});
-
-// DELETE /api/admin/reports/:reportId - Supprimer un signalement
-router.delete('/reports/:reportId', verifyToken, (req, res) => {
-    const db = req.app.locals.db;
-    const { reportId } = req.params;
-    const schoolId = req.admin.schoolId;
-    
-    // Vérifier que le report appartient à l'école
-    db.get(
-        'SELECT id FROM reports WHERE id = ? AND school_id = ?',
-        [reportId, schoolId],
-        (err, report) => {
-            if (err) {
-                return res.status(500).json({ error: 'Erreur serveur' });
-            }
-            
-            if (!report) {
-                return res.status(404).json({ error: 'Signalement non trouvé' });
-            }
-            
-            // Supprimer en cascade
-            db.serialize(() => {
-                db.run('DELETE FROM discussions WHERE report_id = ?', [reportId]);
-                db.run('DELETE FROM report_files WHERE report_id = ?', [reportId]);
-                db.run('DELETE FROM reports WHERE id = ?', [reportId], function(err) {
-                    if (err) {
-                        return res.status(500).json({ error: 'Erreur suppression' });
-                    }
-                    
-                    res.json({ message: 'Signalement supprimé' });
-                });
-            });
-        }
-    );
+        
+        res.json({ success: true, team: admins });
+        
+    } catch (error) {
+        console.error('Erreur team:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
 module.exports = router;

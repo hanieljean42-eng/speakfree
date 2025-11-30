@@ -1,6 +1,4 @@
 # Redirections Netlify
-# API - vers le backend Render
-/api/* https://speakfree-api.onrender.com/api/:splat 200
+# Toutes les routes non-fichier redirigent vers index.html (SPA)
 
-# SPA - tout le reste vers index.html
-/* /index.html 200
+/*    /index.html   200

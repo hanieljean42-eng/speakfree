@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔑 Reprendre ma Conversation - Haniel</title>
+    <title>🤖 Reprendre ma conversation avec Haniel - SpeakFree</title>
     <style>
         * {
             margin: 0;
@@ -15,101 +15,66 @@
             font-family: 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: white;
-            padding: 20px;
         }
 
         .container {
-            max-width: 500px;
-            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        .access-container {
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateX(-5px);
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* Formulaire de connexion */
+        .login-container {
             background: white;
             border-radius: 20px;
+            padding: 40px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-
-        .access-header {
-            background: linear-gradient(135deg, #fd7e14, #ff9f43);
-            padding: 40px 30px;
-            text-align: center;
-            color: white;
-        }
-
-        .access-header .icon {
-            font-size: 4em;
-            margin-bottom: 15px;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        .access-header h1 {
-            font-size: 2em;
-            margin-bottom: 8px;
-        }
-
-        .access-header p {
-            opacity: 0.9;
-            font-size: 1.05em;
-        }
-
-        .access-body {
-            padding: 40px 30px;
             color: #333;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
-        .alert {
-            padding: 15px 20px;
-            border-radius: 10px;
+        .login-container h2 {
+            color: #fd7e14;
             margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert-info {
-            background: #fff3cd;
-            color: #856404;
-            border-left: 4px solid #ffc107;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-            display: none;
-        }
-
-        .alert-error.active {
-            display: flex;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-            display: none;
-        }
-
-        .alert-success.active {
-            display: flex;
+            text-align: center;
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
@@ -117,34 +82,21 @@
             margin-bottom: 8px;
             font-weight: 600;
             color: #333;
-            font-size: 1.05em;
         }
 
-        .code-input {
+        .form-control {
             width: 100%;
-            padding: 15px;
+            padding: 12px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            font-size: 1.2em;
-            text-align: center;
-            font-family: monospace;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-size: 1em;
             transition: all 0.3s;
         }
 
-        .code-input:focus {
+        .form-control:focus {
             outline: none;
             border-color: #fd7e14;
             box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
-        }
-
-        .helper-text {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 8px;
-            text-align: center;
         }
 
         .btn {
@@ -170,328 +122,703 @@
             cursor: not-allowed;
         }
 
-        .divider {
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin: 30px 0;
-            color: #999;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: #e0e0e0;
-        }
-
-        .secondary-actions {
-            display: grid;
             gap: 10px;
         }
 
-        .secondary-btn {
-            padding: 12px;
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            color: #333;
-            font-size: 0.95em;
-            display: block;
+        .alert-info {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #fd7e14;
         }
 
-        .secondary-btn:hover {
-            background: #e9ecef;
-            border-color: #fd7e14;
-            transform: translateY(-2px);
+        .alert-warning {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
         }
 
-        .info-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-        }
-
-        .info-box h3 {
-            color: #fd7e14;
-            margin-bottom: 12px;
-            font-size: 1.2em;
-        }
-
-        .info-box ul {
-            margin-left: 20px;
-            color: #666;
-            line-height: 1.8;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #999;
-            text-decoration: none;
-            transition: all 0.3s;
-            text-align: center;
-            width: 100%;
-        }
-
-        .back-link:hover {
-            color: #fd7e14;
-        }
-
-        @media (max-width: 480px) {
-            .access-container {
-                border-radius: 0;
-            }
-
-            .access-header {
-                padding: 30px 20px;
-            }
-
-            .access-body {
-                padding: 30px 20px;
-            }
-        }
-
-        .loading {
+        /* Chat Container */
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin: 20px 0;
             display: none;
-            text-align: center;
-            padding: 20px;
         }
 
-        .loading.active {
+        .chat-container.active {
             display: block;
         }
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #fd7e14;
-            border-radius: 50%;
+        .chat-header {
+            background: linear-gradient(135deg, #fd7e14 0%, #ff9f43 100%);
+            padding: 25px;
+            text-align: center;
+            color: white;
+        }
+
+        .chat-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+        }
+
+        .session-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .session-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .session-status.active {
+            background: #28a745;
+        }
+
+        .session-status.completed {
+            background: #6c757d;
+        }
+
+        .messages-container {
+            height: 500px;
+            overflow-y: auto;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            flex-direction: row;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
             width: 40px;
             height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            flex-shrink: 0;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.75em;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 15px;
+            width: fit-content;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fd7e14;
+            margin: 0 3px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .chat-input-container {
+            padding: 20px 25px;
+            background: white;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #fd7e14;
+            box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+        }
+
+        .chat-input:disabled {
+            background: #f8f9fa;
+            cursor: not-allowed;
+        }
+
+        .send-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #fd7e14, #ff9f43);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(253, 126, 20, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .completed-banner {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .completed-banner h3 {
+            margin-bottom: 10px;
+        }
+
+        .completed-banner .codes {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .completed-banner .code-item {
+            text-align: center;
+        }
+
+        .completed-banner .code-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .completed-banner .code-value {
+            font-weight: bold;
+            font-size: 1.1em;
+            background: white;
+            color: #28a745;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .messages-container {
+                height: 400px;
+            }
+
+            .message-content {
+                max-width: 80%;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="access-container">
-            <div class="access-header">
-                <div class="icon">🤖</div>
-                <h1>Reprendre ma Conversation</h1>
-                <p>Avec Haniel, ton assistant IA</p>
+        <a href="/index.html" class="back-btn">← Retour à l'accueil</a>
+
+        <header>
+            <h1>🤖 Reprendre ma conversation</h1>
+            <p>Continue là où tu t'étais arrêté avec Haniel</p>
+        </header>
+
+        <!-- Formulaire de connexion -->
+        <div class="login-container" id="loginContainer">
+            <h2>🔑 Reprendre ma Conversation</h2>
+
+            <div class="alert alert-info">
+                <span style="font-size: 1.5em;">💡</span>
+                <div>
+                    <strong>Code de conversation</strong><br>
+                    Tu as reçu un code qui commence par <strong>CHAT-</strong> lors de ta première conversation.
+                </div>
             </div>
 
-            <div class="access-body">
-                <div class="alert alert-info">
-                    <span style="font-size: 1.5em;">💡</span>
-                    <div>
-                        <strong>Besoin de ton code de conversation</strong><br>
-                        Entre le code que Haniel t'a donné lors de ta dernière session
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Mon code de conversation</label>
+                    <input type="text" class="form-control" id="sessionCode" required placeholder="Ex: CHAT-M2VH9V-ABC123">
+                </div>
+
+                <button type="submit" class="btn" id="loginBtn">
+                    🚀 Reprendre la conversation
+                </button>
+            </form>
+        </div>
+
+        <!-- Zone de chat (cachée initialement) -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                <h2>🤖 Haniel</h2>
+                <p>Assistant IA SpeakFree</p>
+                <div class="session-badge">
+                    Session: <span id="displaySessionCode"></span>
+                    <span class="session-status active" id="sessionStatus">En cours</span>
+                </div>
+            </div>
+
+            <!-- Bannière si conversation terminée -->
+            <div class="completed-banner" id="completedBanner" style="display: none;">
+                <h3>✅ Signalement envoyé avec succès !</h3>
+                <p>Ton signalement a été transmis à ton école. Voici tes codes :</p>
+                <div class="codes">
+                    <div class="code-item">
+                        <div class="code-label">Code de suivi</div>
+                        <div class="code-value" id="trackingCodeDisplay">-</div>
+                    </div>
+                    <div class="code-item">
+                        <div class="code-label">Code de discussion</div>
+                        <div class="code-value" id="discussionCodeDisplay">-</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="alert alert-error" id="errorAlert">
-                    <span style="font-size: 1.5em;">❌</span>
-                    <div id="errorMessage">Code de conversation introuvable</div>
-                </div>
-
-                <div class="alert alert-success" id="successAlert">
-                    <span style="font-size: 1.5em;">✅</span>
-                    <div>Conversation trouvée ! Redirection...</div>
-                </div>
-
-                <div class="info-box">
-                    <h3>📋 Format du code</h3>
-                    <ul>
-                        <li>Le code commence par <strong>CHAT-</strong></li>
-                        <li>Suivi de 9 caractères (lettres et chiffres)</li>
-                        <li>Exemple: <strong>CHAT-ABC123XYZ</strong></li>
-                    </ul>
-                </div>
-
-                <form id="accessForm">
-                    <div class="form-group">
-                        <label for="sessionCode">🔑 Code de Conversation</label>
-                        <input 
-                            type="text" 
-                            class="code-input" 
-                            id="sessionCode" 
-                            required 
-                            placeholder="CHAT-XXXXXXXXX"
-                            maxlength="14"
-                            pattern="CHAT-[A-Z0-9]{9}"
-                        >
-                        <div class="helper-text">
-                            Entre ton code de conversation Haniel
-                        </div>
+            <div class="messages-container" id="messagesContainer">
+                <!-- Les messages seront ajoutés dynamiquement -->
+                <div class="message bot typing-indicator" id="typingIndicator" style="display: none;">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
-
-                    <button type="submit" class="btn" id="accessBtn">
-                        🚀 Reprendre la Conversation
-                    </button>
-                </form>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p style="color: #666;">Chargement de ta conversation...</p>
                 </div>
+            </div>
 
-                <div class="divider">OU</div>
-
-                <div class="secondary-actions">
-                    <a href="/chat-ia.html" class="secondary-btn">
-                        ✨ Commencer une Nouvelle Conversation
-                    </a>
-                    <a href="/index.html" class="secondary-btn">
-                        🏠 Retour à l'Accueil
-                    </a>
-                </div>
-
-                <a href="#" class="back-link" onclick="showHelp(); return false;">
-                    ❓ Je n'ai pas mon code / Aide
-                </a>
+            <div class="chat-input-container" id="inputContainer">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="messageInput" 
+                    placeholder="Écris ton message ici..."
+                >
+                <button class="send-btn" id="sendBtn">
+                    Envoyer 📤
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- Configuration API -->
+    <script src="/config.js"></script>
+    
     <script>
-        // Auto-formatage du code
-        document.getElementById('sessionCode').addEventListener('input', function(e) {
-            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+        // Variables globales
+        let sessionCode = null;
+        let sessionStatus = 'active';
+
+        // Attendre le chargement complet
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[REPRENDRE] Page chargée');
             
-            // Auto-ajouter "CHAT-" si pas présent
-            if (!value.startsWith('CHAT-') && value.length > 0) {
-                if (value.startsWith('CHAT')) {
-                    value = value.substring(0, 4) + '-' + value.substring(4);
-                } else {
-                    value = 'CHAT-' + value;
-                }
+            // Vérifier config.js
+            if (typeof CONFIG === 'undefined') {
+                console.error('[REPRENDRE] CONFIG non défini!');
+                alert('Erreur de configuration. Rafraîchis la page.');
+                return;
             }
             
-            // Limiter à 14 caractères (CHAT- + 9 caractères)
-            if (value.length > 14) {
-                value = value.substring(0, 14);
-            }
+            // Attacher les événements
+            attachEvents();
             
-            e.target.value = value;
+            // Vérifier si un code est dans l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            if (codeParam) {
+                document.getElementById('sessionCode').value = codeParam;
+                // Auto-submit
+                loadSession(codeParam);
+            }
         });
 
-        // Gestion du formulaire
-        document.getElementById('accessForm').addEventListener('submit', function(e) {
+        function attachEvents() {
+            // Formulaire de connexion
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+            
+            // Bouton Envoyer
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sendMessage();
+                });
+            }
+            
+            // Touche Entrée sur l'input
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+        }
+
+        // Connexion à la session
+        function handleLogin(e) {
             e.preventDefault();
 
-            const sessionCode = document.getElementById('sessionCode').value.trim();
-            const accessBtn = document.getElementById('accessBtn');
-            const errorAlert = document.getElementById('errorAlert');
-            const successAlert = document.getElementById('successAlert');
-            const loading = document.getElementById('loading');
-            const form = document.getElementById('accessForm');
-
-            // Masquer les alertes
-            errorAlert.classList.remove('active');
-            successAlert.classList.remove('active');
-
-            // Validation du format
-            if (!sessionCode.match(/^CHAT-[A-Z0-9]{9}$/)) {
-                errorAlert.classList.add('active');
-                document.getElementById('errorMessage').textContent = 
-                    'Format de code invalide. Le code doit être au format CHAT-XXXXXXXXX';
+            const code = document.getElementById('sessionCode').value.trim();
+            
+            if (!code) {
+                alert('Veuillez entrer le code de conversation.');
                 return;
             }
 
-            // Désactiver le bouton et afficher le loading
-            accessBtn.disabled = true;
-            form.style.display = 'none';
-            loading.classList.add('active');
-
-            // Simuler la recherche de la session (remplacer par vraie API)
-            setTimeout(() => {
-                // Exemples de codes de test
-                const testSessions = [
-                    'CHAT-ABC123XYZ',
-                    'CHAT-TEST12345',
-                    'CHAT-DEMO67890'
-                ];
-
-                if (testSessions.includes(sessionCode) || sessionCode.startsWith('CHAT-')) {
-                    // Session trouvée
-                    successAlert.classList.add('active');
-                    loading.classList.remove('active');
-
-                    // Redirection vers le chat avec le code de session
-                    setTimeout(() => {
-                        window.location.href = `/chat-ia?session=${sessionCode}`;
-                    }, 1500);
-                } else {
-                    // Session non trouvée
-                    errorAlert.classList.add('active');
-                    document.getElementById('errorMessage').textContent = 
-                        'Code de conversation introuvable. Vérifie ton code ou commence une nouvelle conversation.';
-                    
-                    loading.classList.remove('active');
-                    form.style.display = 'block';
-                    accessBtn.disabled = false;
-
-                    // Animation d'erreur
-                    document.querySelector('.access-container').style.animation = 'shake 0.5s';
-                    setTimeout(() => {
-                        document.querySelector('.access-container').style.animation = '';
-                    }, 500);
-                }
-            }, 2000);
-        });
-
-        // Afficher l'aide
-        function showHelp() {
-            const helpMessage = `
-📋 AIDE - Code de Conversation
-
-🔍 Où trouver mon code ?
-• Le code t'a été donné par Haniel lors de ta première conversation
-• Il apparaît en haut de la fenêtre de chat
-• Format: CHAT-XXXXXXXXX (exemple: CHAT-ABC123XYZ)
-
-❓ Je n'ai pas noté mon code
-Si tu as perdu ton code de conversation :
-1. Tu peux commencer une nouvelle conversation avec Haniel
-2. Haniel te donnera un nouveau code à sauvegarder
-3. Pense à noter ce code pour la prochaine fois !
-
-💡 Astuce
-Sauvegarde ton code de conversation dans tes notes ou prends une capture d'écran pour ne pas le perdre.
-
-🆕 Nouvelle conversation
-Tu peux toujours commencer une nouvelle conversation en cliquant sur "Commencer une Nouvelle Conversation" ci-dessous.
-            `;
-            
-            alert(helpMessage);
+            loadSession(code);
         }
 
-        // Animation de secousse
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-10px); }
-                75% { transform: translateX(10px); }
-            }
-        `;
-        document.head.appendChild(style);
+        // Charger la session
+        function loadSession(code) {
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Chargement...';
+            
+            console.log('[REPRENDRE] Chargement session:', code);
 
-        // Focus automatique sur l'input
-        document.getElementById('sessionCode').focus();
+            // Appel API pour récupérer la session
+            fetch(CONFIG.API_URL + '/api/ai-chat/session/' + encodeURIComponent(code), {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Session non trouvée');
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('[REPRENDRE] Session trouvée:', data);
+                
+                if (data.success) {
+                    sessionCode = data.sessionCode;
+                    sessionStatus = data.status;
+                    
+                    // Afficher le chat
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('chatContainer').classList.add('active');
+                    
+                    // Afficher le code
+                    document.getElementById('displaySessionCode').textContent = sessionCode;
+                    
+                    // Mettre à jour le statut
+                    const statusEl = document.getElementById('sessionStatus');
+                    if (data.status === 'completed') {
+                        statusEl.textContent = 'Terminée';
+                        statusEl.className = 'session-status completed';
+                        
+                        // Désactiver l'input
+                        document.getElementById('messageInput').disabled = true;
+                        document.getElementById('messageInput').placeholder = 'Conversation terminée';
+                        document.getElementById('sendBtn').disabled = true;
+                        
+                        // Afficher la bannière de completion
+                        showCompletedBanner(data);
+                    } else if (data.status === 'ended') {
+                        statusEl.textContent = 'Interrompue';
+                        statusEl.className = 'session-status completed';
+                    } else {
+                        statusEl.textContent = 'En cours';
+                        statusEl.className = 'session-status active';
+                    }
+                    
+                    // Charger les messages
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            const time = msg.created_at ? new Date(msg.created_at).toLocaleString('fr-FR') : '';
+                            addMessage(msg.role === 'assistant' ? 'bot' : 'user', msg.content, time);
+                        });
+                    }
+                    
+                    // Focus sur l'input si session active
+                    if (data.status === 'active') {
+                        document.getElementById('messageInput').focus();
+                    }
+                } else {
+                    throw new Error(data.error || 'Session non trouvée');
+                }
+            })
+            .catch(error => {
+                console.error('[REPRENDRE] Erreur:', error);
+                alert('❌ Code invalide ou session non trouvée.\n\nVérifie ton code et réessaye.');
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🚀 Reprendre la conversation';
+            });
+        }
+
+        // Afficher la bannière quand la conversation est terminée
+        function showCompletedBanner(data) {
+            const banner = document.getElementById('completedBanner');
+            
+            // Chercher les codes dans les messages (le dernier message de Haniel avec les codes)
+            if (data.messages && data.messages.length > 0) {
+                for (let i = data.messages.length - 1; i >= 0; i--) {
+                    const msg = data.messages[i];
+                    if (msg.role === 'assistant' && msg.content) {
+                        // Chercher les codes dans le message
+                        const trackingMatch = msg.content.match(/RPT-[A-Z0-9]+/);
+                        const discussionMatch = msg.content.match(/DSC-[A-Z0-9]+/);
+                        
+                        if (trackingMatch && discussionMatch) {
+                            document.getElementById('trackingCodeDisplay').textContent = trackingMatch[0];
+                            document.getElementById('discussionCodeDisplay').textContent = discussionMatch[0];
+                            banner.style.display = 'block';
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Envoyer un message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const message = input.value.trim();
+            
+            if (!message || !sessionCode || sessionStatus !== 'active') {
+                return;
+            }
+            
+            // Désactiver temporairement
+            input.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Afficher le message utilisateur
+            addMessage('user', message, 'À l\'instant');
+            input.value = '';
+            
+            // Afficher "en train d'écrire"
+            showTypingIndicator();
+            
+            console.log('[REPRENDRE] Envoi message:', message);
+
+            // Envoyer au backend
+            fetch(CONFIG.API_URL + '/api/ai-chat/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionCode: sessionCode,
+                    message: message
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[REPRENDRE] Réponse:', data);
+                hideTypingIndicator();
+                
+                if (data.message) {
+                    addMessage('bot', data.message, 'À l\'instant');
+                    
+                    // Si le signalement est créé
+                    if (data.reportCreated) {
+                        sessionStatus = 'completed';
+                        
+                        // Mettre à jour l'interface
+                        const statusEl = document.getElementById('sessionStatus');
+                        statusEl.textContent = 'Terminée';
+                        statusEl.className = 'session-status completed';
+                        
+                        // Afficher la bannière
+                        if (data.trackingCode && data.discussionCode) {
+                            document.getElementById('trackingCodeDisplay').textContent = data.trackingCode;
+                            document.getElementById('discussionCodeDisplay').textContent = data.discussionCode;
+                            document.getElementById('completedBanner').style.display = 'block';
+                        }
+                        
+                        // Désactiver l'input
+                        input.disabled = true;
+                        input.placeholder = 'Conversation terminée';
+                        sendBtn.disabled = true;
+                        return;
+                    }
+                } else if (data.error) {
+                    addMessage('bot', '❌ ' + data.error, '');
+                }
+                
+                // Réactiver l'input
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            })
+            .catch(error => {
+                console.error('[REPRENDRE] Erreur envoi:', error);
+                hideTypingIndicator();
+                addMessage('bot', '❌ Erreur de connexion. Réessaye.', '');
+                input.disabled = false;
+                sendBtn.disabled = false;
+            });
+        }
+
+        // Ajouter un message à l'interface
+        function addMessage(sender, content, time) {
+            const container = document.getElementById('messagesContainer');
+            const typing = document.getElementById('typingIndicator');
+            
+            const div = document.createElement('div');
+            div.className = 'message ' + sender;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Formater le texte (Markdown simple)
+            let formatted = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;color:#333;">$1</code>')
+                .replace(/_(.*?)_/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            
+            contentDiv.innerHTML = formatted;
+            
+            if (time) {
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-time';
+                timeDiv.textContent = time;
+                contentDiv.appendChild(timeDiv);
+            }
+            
+            div.appendChild(avatar);
+            div.appendChild(contentDiv);
+            
+            container.insertBefore(div, typing);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Afficher l'indicateur de saisie
+        function showTypingIndicator() {
+            const typing = document.getElementById('typingIndicator');
+            typing.style.display = 'flex';
+            document.getElementById('messagesContainer').scrollTop = 
+                document.getElementById('messagesContainer').scrollHeight;
+        }
+
+        // Masquer l'indicateur de saisie
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        console.log('[REPRENDRE] Script chargé');
     </script>
 </body>
 </html>
