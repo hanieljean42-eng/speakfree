@@ -256,7 +256,10 @@ router.post('/create-session', async (req, res) => {
         
     } catch (error) {
         console.error('Erreur create session:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ 
+            error: 'Erreur serveur', 
+            details: process.env.NODE_ENV !== 'production' ? error.message : undefined 
+        });
     }
 });
 
