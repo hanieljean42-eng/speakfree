@@ -26,6 +26,11 @@ class PWAInstaller {
 
     // Créer le bouton d'installation
     this.createInstallButton();
+    
+    // Afficher le bouton immédiatement si pas en mode standalone
+    if (!PWAInstaller.isStandalone()) {
+      setTimeout(() => this.showInstallButton(), 2000);
+    }
   }
 
   async registerServiceWorker() {
@@ -173,7 +178,8 @@ class PWAInstaller {
 
   async installApp() {
     if (!this.deferredPrompt) {
-      console.log('❌ Prompt d\'installation non disponible');
+      // Si pas de prompt auto, afficher les instructions manuelles
+      this.showManualInstallInstructions();
       return;
     }
 
@@ -193,6 +199,100 @@ class PWAInstaller {
     // Réinitialiser le prompt
     this.deferredPrompt = null;
     this.hideInstallButton();
+  }
+
+  showManualInstallInstructions() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    let instructions = '';
+    if (isIOS) {
+      instructions = `
+        <h3 style="margin-bottom: 15px;">📱 Installation sur iPhone/iPad</h3>
+        <ol style="text-align: left; line-height: 1.8;">
+          <li>Appuie sur le bouton <strong>Partager</strong> ⬆️ (en bas)</li>
+          <li>Sélectionne <strong>"Sur l'écran d'accueil"</strong></li>
+          <li>Confirme en appuyant sur <strong>"Ajouter"</strong></li>
+        </ol>
+      `;
+    } else if (isAndroid) {
+      instructions = `
+        <h3 style="margin-bottom: 15px;">📱 Installation sur Android</h3>
+        <ol style="text-align: left; line-height: 1.8;">
+          <li>Ouvre le menu du navigateur <strong>⋮</strong> (en haut à droite)</li>
+          <li>Sélectionne <strong>"Ajouter à l'écran d'accueil"</strong> ou <strong>"Installer l'application"</strong></li>
+          <li>Confirme l'installation</li>
+        </ol>
+      `;
+    } else {
+      instructions = `
+        <h3 style="margin-bottom: 15px;">💻 Installation sur ordinateur</h3>
+        <p style="line-height: 1.8;">
+          Recherche l'icône d'installation <strong>⊕</strong> dans la barre d'adresse de ton navigateur (Chrome, Edge, etc.)
+        </p>
+      `;
+    }
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    `;
+
+    modal.innerHTML = `
+      <div style="
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 500px;
+        width: 100%;
+        color: white;
+        text-align: center;
+        border: 2px solid #e94560;
+        position: relative;
+      ">
+        <button onclick="this.parentElement.parentElement.remove()" style="
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: rgba(255, 255, 255, 0.1);
+          border: none;
+          color: white;
+          width: 35px;
+          height: 35px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 1.2em;
+        ">✕</button>
+        
+        <div style="font-size: 3em; margin-bottom: 20px;">📲</div>
+        <h2 style="color: #e94560; margin-bottom: 20px;">Installer SpeakFree</h2>
+        ${instructions}
+        
+        <button onclick="this.parentElement.parentElement.remove()" style="
+          margin-top: 25px;
+          padding: 12px 30px;
+          background: #e94560;
+          color: white;
+          border: none;
+          border-radius: 25px;
+          font-weight: bold;
+          cursor: pointer;
+          font-size: 1em;
+        ">J'ai compris</button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
   }
 
   showUpdateNotification() {
