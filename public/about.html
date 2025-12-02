@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#e94560">
     <script src="/maintenance-config.js"></script>
     <link rel="stylesheet" href="/styles-mobile.css">
     <title>ℹ️ À Propos - SpeakFree</title>
@@ -15,57 +15,81 @@
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
             min-height: 100vh;
-            color: white;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e94560;
+            text-decoration: none;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 100px 20px 50px;
         }
 
         .back-btn {
             display: inline-block;
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.2);
+            padding: 12px 24px;
+            background: rgba(233, 69, 96, 0.2);
             color: white;
             text-decoration: none;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            border-radius: 25px;
+            margin-bottom: 30px;
             transition: all 0.3s;
+            border: 1px solid rgba(233, 69, 96, 0.3);
         }
 
         .back-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(233, 69, 96, 0.4);
             transform: translateX(-5px);
         }
 
         header {
             text-align: center;
-            padding: 40px 20px 30px;
+            margin-bottom: 50px;
         }
 
         header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         header p {
-            font-size: 1.3em;
-            opacity: 0.9;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
         }
 
         .hero-section {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
             padding: 40px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            text-align: center;
             margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
         }
 
         .hero-section .icon {
@@ -85,16 +109,16 @@
         }
 
         .content-box {
-            background: white;
-            color: #333;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
             margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
 
         .content-box h2 {
-            color: #667eea;
+            color: #e94560;
             font-size: 2em;
             margin-bottom: 20px;
             display: flex;
@@ -104,7 +128,7 @@
 
         .content-box p {
             line-height: 1.8;
-            color: #666;
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 15px;
             font-size: 1.05em;
         }
@@ -135,18 +159,18 @@
         }
 
         .value-card h3 {
-            color: #667eea;
+            color: #e94560;
             margin-bottom: 10px;
             font-size: 1.3em;
         }
 
         .value-card p {
-            color: #666;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 0.95em;
         }
 
         .stats-section {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #e94560, #d63447);
             color: white;
             padding: 40px;
             border-radius: 20px;
@@ -204,12 +228,12 @@
             width: 15px;
             height: 15px;
             border-radius: 50%;
-            background: #667eea;
+            background: #e94560;
             border: 3px solid white;
         }
 
         .timeline-item h4 {
-            color: #667eea;
+            color: #e94560;
             font-size: 1.2em;
             margin-bottom: 8px;
         }
@@ -233,7 +257,7 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #e94560, #d63447);
             margin: 0 auto 20px;
             display: flex;
             align-items: center;
@@ -242,7 +266,7 @@
         }
 
         .team-member h3 {
-            color: #667eea;
+            color: #e94560;
             margin-bottom: 5px;
         }
 
@@ -252,7 +276,7 @@
         }
 
         .team-member .contact {
-            color: #666;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 0.95em;
         }
 
@@ -280,7 +304,7 @@
         .btn {
             padding: 15px 35px;
             background: white;
-            color: #667eea;
+            color: #e94560;
             border: none;
             border-radius: 10px;
             font-size: 1.1em;
@@ -447,7 +471,7 @@
                     🌍 Abidjan, Côte d'Ivoire
                 </div>
             </div>
-            <p style="color: #666; margin-top: 20px;">
+            <p style="color: rgba(255, 255, 255, 0.8); margin-top: 20px;">
                 Passionnés par l'impact social de la technologie, Haniel et son équipe ont développé SpeakFree pour 
                 contribuer à un environnement scolaire plus sûr et plus bienveillant pour tous les élèves.
             </p>
