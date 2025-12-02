@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'Icônes PWA - SpeakFree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            color: #e94560;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .canvas-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .icon-preview {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: white;
+        }
+        .download-btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .download-btn:hover {
+            background: #d63447;
+        }
+        .info {
+            background: rgba(233, 69, 96, 0.1);
+            border-left: 4px solid #e94560;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        .download-all {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .download-all button {
+            padding: 15px 40px;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .download-all button:hover {
+            background: #d63447;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Générateur d'Icônes PWA SpeakFree</h1>
+        
+        <div class="info">
+            <strong>📝 Instructions:</strong><br>
+            1. Les icônes seront générées automatiquement avec le logo SpeakFree<br>
+            2. Cliquez sur "Télécharger" sous chaque icône pour la sauvegarder<br>
+            3. Enregistrez chaque fichier avec le nom exact indiqué<br>
+            4. Placez tous les fichiers dans le dossier <code>public/icons/</code>
+        </div>
+
+        <div class="canvas-container" id="canvasContainer"></div>
+
+        <div class="download-all">
+            <button onclick="downloadAll()">⬇️ Télécharger Toutes les Icônes</button>
+        </div>
+    </div>
+
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const canvases = {};
+
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Fond dégradé
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(0.5, '#16213e');
+            gradient.addColorStop(1, '#e94560');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Cercle central
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Logo emoji
+            ctx.font = `bold ${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.fillText('🗣️', size / 2, size / 2);
+
+            // Bordure
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = size * 0.02;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.48, 0, Math.PI * 2);
+            ctx.stroke();
+
+            return canvas;
+        }
+
+        function displayIcons() {
+            const container = document.getElementById('canvasContainer');
+            
+            sizes.forEach(size => {
+                const div = document.createElement('div');
+                div.className = 'icon-preview';
+                
+                const canvas = createIcon(size);
+                canvases[size] = canvas;
+                
+                const fileName = `icon-${size}x${size}.png`;
+                
+                div.innerHTML = `
+                    <p><strong>${size}x${size}</strong></p>
+                `;
+                div.appendChild(canvas);
+                
+                const btn = document.createElement('button');
+                btn.className = 'download-btn';
+                btn.textContent = `Télécharger ${fileName}`;
+                btn.onclick = () => downloadIcon(size, fileName);
+                div.appendChild(btn);
+                
+                container.appendChild(div);
+            });
+        }
+
+        function downloadIcon(size, fileName) {
+            const canvas = canvases[size];
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        async function downloadAll() {
+            for (const size of sizes) {
+                const fileName = `icon-${size}x${size}.png`;
+                downloadIcon(size, fileName);
+                // Petit délai entre chaque téléchargement
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+
+        displayIcons();
+    </script>
+</body>
+</html>

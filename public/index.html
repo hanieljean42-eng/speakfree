@@ -3,9 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#e94560">
+    <meta name="description" content="SpeakFree - Plateforme sécurisée de signalement et prévention du harcèlement scolaire en Côte d'Ivoire">
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SpeakFree">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+    
     <title>💬 SpeakFree - Parle librement. Protège ton école.</title>
     
     <!-- Préchargement des ressources critiques -->
@@ -791,5 +800,8 @@
             });
         }
     </script>
+    
+    <!-- PWA Installer -->
+    <script src="/pwa-installer.js" defer></script>
 </body>
 </html>
