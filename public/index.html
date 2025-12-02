@@ -450,27 +450,6 @@
             </div>
         </div>
 
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 50px 40px; margin: 50px 0; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-            <h2 style="text-align: center; margin-bottom: 40px; font-size: 2.5em;">📊 Statistiques en Temps Réel</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px;">
-                <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 3em; margin-bottom: 10px;">🏫</div>
-                    <div style="font-size: 2.5em; font-weight: bold; margin-bottom: 5px;" id="statsSchools">0</div>
-                    <div style="font-size: 1.1em; opacity: 0.9;">Écoles Inscrites</div>
-                </div>
-                <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 3em; margin-bottom: 10px;">📝</div>
-                    <div style="font-size: 2.5em; font-weight: bold; margin-bottom: 5px;" id="statsReports">0</div>
-                    <div style="font-size: 1.1em; opacity: 0.9;">Signalements</div>
-                </div>
-                <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 3em; margin-bottom: 10px;">👨‍💼</div>
-                    <div style="font-size: 2.5em; font-weight: bold; margin-bottom: 5px;" id="statsAdmins">0</div>
-                    <div style="font-size: 1.1em; opacity: 0.9;">Administrateurs</div>
-                </div>
-            </div>
-        </div>
-
         <footer>
             <p>
                 <strong>SpeakFree</strong> - Pour une école plus sûre
@@ -507,88 +486,6 @@
     <script src="/config.js"></script>
     
     <script>
-        // Cache localStorage pour affichage instantané
-        const CACHE_KEY = 'speakfree_stats_cache';
-        const CACHE_DURATION = 60000; // 1 minute
-        
-        // Afficher immédiatement les stats depuis le cache si disponibles
-        (function displayCachedStats() {
-            const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) {
-                try {
-                    const { data, timestamp } = JSON.parse(cached);
-                    if (Date.now() - timestamp < CACHE_DURATION) {
-                        updateStat('statsSchools', data.schools || 0, false);
-                        updateStat('statsReports', data.reports || 0, false);
-                        updateStat('statsAdmins', data.admins || 0, false);
-                        console.log('📦 Stats affichées depuis le cache');
-                    }
-                } catch (e) {}
-            }
-        })();
-        
-        // Charger les statistiques immédiatement
-        loadStatistics();
-        // Rafraîchir les statistiques toutes les 30 secondes
-        setInterval(loadStatistics, 30000);
-
-        function loadStatistics() {
-            console.log('[INDEX] Chargement des statistiques...');
-            
-            // Timeout de 2 secondes pour ne pas bloquer l'affichage
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 2000);
-            
-            fetch(API_BASE_URL + '/api/schools/stats/global', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal
-            })
-            .then(response => {
-                clearTimeout(timeoutId);
-                if (!response.ok) throw new Error('Erreur réseau');
-                return response.json();
-            })
-            .then(data => {
-                // Mettre en cache les nouvelles données
-                localStorage.setItem(CACHE_KEY, JSON.stringify({
-                    data: { schools: data.schools, reports: data.reports, admins: data.admins },
-                    timestamp: Date.now()
-                }));
-                
-                // Mettre à jour les statistiques avec animation
-                updateStat('statsSchools', data.schools || 0);
-                updateStat('statsReports', data.reports || 0);
-                updateStat('statsAdmins', data.admins || 0);
-                console.log('✅ Statistiques mises à jour:', data);
-            })
-            .catch(err => {
-                clearTimeout(timeoutId);
-                console.error('❌ Erreur chargement stats:', err);
-            });
-        }
-
-        function updateStat(elementId, newValue, animate = true) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-            
-            const currentValue = parseInt(element.textContent) || 0;
-            
-            if (currentValue !== newValue) {
-                element.textContent = newValue;
-                
-                // Animation uniquement si demandée
-                if (animate) {
-                    element.style.transition = 'all 0.3s ease';
-                    element.style.transform = 'scale(1.1)';
-                    
-                    setTimeout(() => {
-                        element.style.transform = 'scale(1)';
-                    }, 300);
-                }
-            }
-        }
-        
         // Suivi de signalement
         document.addEventListener('DOMContentLoaded', function() {
             const trackBtn = document.getElementById('trackReportBtn');
