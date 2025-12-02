@@ -323,28 +323,185 @@
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            nav {
+                padding: 12px 15px;
+                margin-bottom: 15px;
+                border-radius: 12px;
+            }
+
+            nav .logo {
+                font-size: 1.1em;
+            }
+
+            nav .nav-links {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                width: 100%;
+                margin-top: 10px;
+            }
+
+            nav a {
+                font-size: 0.85em;
+                padding: 8px;
+                text-align: center;
+                background: rgba(102, 126, 234, 0.1);
+                border-radius: 8px;
+            }
+
+            header {
+                padding: 20px 15px 15px;
+            }
+
             header h1 {
-                font-size: 2.5em;
+                font-size: 2em;
+                margin-bottom: 8px;
             }
 
             header p {
-                font-size: 1.2em;
+                font-size: 1em;
+                margin-bottom: 15px;
+            }
+
+            header p[style*="margin-top"] {
+                font-size: 0.95em;
+            }
+
+            header p[style*="margin-bottom: 0"] {
+                font-size: 0.9em;
+            }
+
+            .section-title h2 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
             }
 
             .cards {
                 grid-template-columns: 1fr;
+                gap: 15px;
+                margin: 20px 0;
             }
 
-            nav {
-                flex-direction: column;
-                align-items: flex-start;
+            .card {
+                padding: 20px;
+                border-radius: 12px;
+            }
+
+            .card-icon {
+                font-size: 2.5em;
+                margin-bottom: 12px;
+            }
+
+            .card h2 {
+                font-size: 1.3em;
+                margin-bottom: 10px;
+            }
+
+            .card p {
+                font-size: 0.9em;
+                margin-bottom: 15px;
+            }
+
+            .btn {
+                padding: 10px 25px;
+                font-size: 0.95em;
+                border-radius: 20px;
+                width: 100%;
+            }
+
+            .featured-badge {
+                font-size: 0.75em;
+                padding: 4px 12px;
+            }
+
+            .admin-section, .register-section {
+                margin: 30px 0;
+                padding: 20px 15px;
+                border-radius: 12px;
+            }
+
+            .admin-section h2, .register-section h2 {
+                font-size: 1.4em;
+                margin-bottom: 12px;
+            }
+
+            .admin-section p, .register-section p {
+                font-size: 0.95em;
+                margin-bottom: 15px;
+            }
+
+            .features {
+                padding: 25px 15px;
+                margin: 30px 0;
+                border-radius: 12px;
+            }
+
+            .features h2 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+            }
+
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .feature-item {
+                padding: 12px;
+            }
+
+            .feature-item .icon {
+                font-size: 2em;
+                margin-bottom: 8px;
+            }
+
+            .feature-item h3 {
+                font-size: 1em;
+                margin-bottom: 6px;
+            }
+
+            .feature-item p {
+                font-size: 0.85em;
+            }
+
+            footer {
+                padding: 20px 15px;
+            }
+
+            footer p {
+                font-size: 0.85em;
+                margin-bottom: 8px;
+            }
+
+            .btn-green, .btn-blue {
+                font-size: 1.1em;
+                padding: 15px 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .section-title h2 {
+                font-size: 1.3em;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
             }
 
             nav .nav-links {
-                width: 100%;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
+                grid-template-columns: 1fr;
+            }
+
+            nav a {
+                font-size: 0.9em;
             }
         }
     </style>
