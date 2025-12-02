@@ -1,6 +1,6 @@
 // Configuration du mode maintenance - Version 2.0
 // Changez cette valeur à true pour activer le mode maintenance
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 
 // Pages exclues de la redirection (ex: page de maintenance elle-même)
 const EXCLUDED_PAGES = [
