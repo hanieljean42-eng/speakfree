@@ -507,30 +507,45 @@
     <script src="/config.js"></script>
     
     <script>
-        // Charger les statistiques réelles au chargement de la page
-        document.addEventListener('DOMContentLoaded', function() {
-            loadStatistics();
-            // Rafraîchir les statistiques toutes les 30 secondes
-            setInterval(loadStatistics, 30000);
-        });
+        // Charger les statistiques immédiatement (pas besoin d'attendre DOMContentLoaded)
+        loadStatistics();
+        // Rafraîchir les statistiques toutes les 30 secondes
+        setInterval(loadStatistics, 30000);
 
         function loadStatistics() {
             console.log('[INDEX] Chargement des statistiques...');
-            apiCall('/api/schools/stats/global')
-                .then(data => {
-                    // Mettre à jour les statistiques avec animation
-                    updateStat('statsSchools', data.schools || 0);
-                    updateStat('statsReports', data.reports || 0);
-                    updateStat('statsAdmins', data.admins || 0);
-                    console.log('✅ Statistiques mises à jour:', data);
-                })
-                .catch(err => {
-                    console.error('❌ Erreur chargement stats:', err);
-                    // Afficher 0 en cas d'erreur
+            
+            // Timeout de 3 secondes pour ne pas bloquer l'affichage
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            fetch(API_BASE_URL + '/api/schools/stats/global', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal
+            })
+            .then(response => {
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            })
+            .then(data => {
+                // Mettre à jour les statistiques avec animation
+                updateStat('statsSchools', data.schools || 0);
+                updateStat('statsReports', data.reports || 0);
+                updateStat('statsAdmins', data.admins || 0);
+                console.log('✅ Statistiques mises à jour:', data);
+            })
+            .catch(err => {
+                clearTimeout(timeoutId);
+                console.error('❌ Erreur chargement stats:', err);
+                // Afficher des valeurs par défaut en cas d'erreur
+                if (document.getElementById('statsSchools').textContent === '0') {
                     document.getElementById('statsSchools').textContent = '0';
                     document.getElementById('statsReports').textContent = '0';
                     document.getElementById('statsAdmins').textContent = '0';
-                });
+                }
+            });
         }
 
         function updateStat(elementId, newValue) {
