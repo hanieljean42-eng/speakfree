@@ -4,6 +4,7 @@
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Access-Control-Allow-Origin: *
+  X-DNS-Prefetch-Control: on
 
 /maintenance-config.js
   Content-Type: application/javascript
@@ -13,14 +14,31 @@
 
 /*.js
   Content-Type: application/javascript
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
 
 /*.css
   Content-Type: text/css
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff
 
 /*.html
   Content-Type: text/html; charset=UTF-8
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
   Expires: 0
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.jpeg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable

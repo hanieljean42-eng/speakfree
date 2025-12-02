@@ -7,8 +7,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>💬 SpeakFree - Parle librement. Protège ton école.</title>
+    
+    <!-- Préchargement des ressources critiques -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="preload" href="/config.js" as="script">
+    
     <script src="/maintenance-config.js"></script>
-    <link rel="stylesheet" href="/styles-mobile.css">
+    <link rel="stylesheet" href="/styles-mobile.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/styles-mobile.css"></noscript>
     <style>
         * {
             margin: 0;
@@ -21,6 +28,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         .container {
@@ -59,7 +69,8 @@
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s;
+            transition: color 0.2s ease, transform 0.2s ease;
+            will-change: transform;
         }
 
         nav a:hover {
@@ -102,9 +113,10 @@
             padding: 25px;
             text-align: center;
             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
             position: relative;
+            will-change: transform;
         }
 
         .card:hover {
@@ -159,10 +171,11 @@
             border-radius: 25px;
             font-weight: bold;
             font-size: 1em;
-            transition: all 0.3s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
             box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
             border: none;
             cursor: pointer;
+            will-change: transform;
         }
 
         .btn:hover {
@@ -639,9 +652,9 @@
     </div>
 
     <!-- Configuration centralisée API - DOIT ÊTRE CHARGÉ EN PREMIER -->
-    <script src="/config.js"></script>
+    <script src="/config.js" defer></script>
     
-    <script>
+    <script defer>
         // Suivi de signalement
         document.addEventListener('DOMContentLoaded', function() {
             const trackBtn = document.getElementById('trackReportBtn');
