@@ -507,7 +507,27 @@
     <script src="/config.js"></script>
     
     <script>
-        // Charger les statistiques immédiatement (pas besoin d'attendre DOMContentLoaded)
+        // Cache localStorage pour affichage instantané
+        const CACHE_KEY = 'speakfree_stats_cache';
+        const CACHE_DURATION = 60000; // 1 minute
+        
+        // Afficher immédiatement les stats depuis le cache si disponibles
+        (function displayCachedStats() {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                try {
+                    const { data, timestamp } = JSON.parse(cached);
+                    if (Date.now() - timestamp < CACHE_DURATION) {
+                        updateStat('statsSchools', data.schools || 0, false);
+                        updateStat('statsReports', data.reports || 0, false);
+                        updateStat('statsAdmins', data.admins || 0, false);
+                        console.log('📦 Stats affichées depuis le cache');
+                    }
+                } catch (e) {}
+            }
+        })();
+        
+        // Charger les statistiques immédiatement
         loadStatistics();
         // Rafraîchir les statistiques toutes les 30 secondes
         setInterval(loadStatistics, 30000);
@@ -515,9 +535,9 @@
         function loadStatistics() {
             console.log('[INDEX] Chargement des statistiques...');
             
-            // Timeout de 3 secondes pour ne pas bloquer l'affichage
+            // Timeout de 2 secondes pour ne pas bloquer l'affichage
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
             
             fetch(API_BASE_URL + '/api/schools/stats/global', {
                 method: 'GET',
@@ -530,6 +550,12 @@
                 return response.json();
             })
             .then(data => {
+                // Mettre en cache les nouvelles données
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    data: { schools: data.schools, reports: data.reports, admins: data.admins },
+                    timestamp: Date.now()
+                }));
+                
                 // Mettre à jour les statistiques avec animation
                 updateStat('statsSchools', data.schools || 0);
                 updateStat('statsReports', data.reports || 0);
@@ -539,28 +565,27 @@
             .catch(err => {
                 clearTimeout(timeoutId);
                 console.error('❌ Erreur chargement stats:', err);
-                // Afficher des valeurs par défaut en cas d'erreur
-                if (document.getElementById('statsSchools').textContent === '0') {
-                    document.getElementById('statsSchools').textContent = '0';
-                    document.getElementById('statsReports').textContent = '0';
-                    document.getElementById('statsAdmins').textContent = '0';
-                }
             });
         }
 
-        function updateStat(elementId, newValue) {
+        function updateStat(elementId, newValue, animate = true) {
             const element = document.getElementById(elementId);
+            if (!element) return;
+            
             const currentValue = parseInt(element.textContent) || 0;
             
             if (currentValue !== newValue) {
-                // Animation de transition
-                element.style.transition = 'all 0.3s ease';
-                element.style.transform = 'scale(1.1)';
                 element.textContent = newValue;
                 
-                setTimeout(() => {
-                    element.style.transform = 'scale(1)';
-                }, 300);
+                // Animation uniquement si demandée
+                if (animate) {
+                    element.style.transition = 'all 0.3s ease';
+                    element.style.transform = 'scale(1.1)';
+                    
+                    setTimeout(() => {
+                        element.style.transform = 'scale(1)';
+                    }, 300);
+                }
             }
         }
         
