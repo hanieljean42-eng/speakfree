@@ -1,5 +1,5 @@
 // Service Worker pour SpeakFree PWA
-const CACHE_NAME = 'speakfree-v1.0.0';
+const CACHE_NAME = 'speakfree-v1.1.0';
 const OFFLINE_URL = '/index.html';
 
 // Fichiers à mettre en cache pour le mode hors ligne
@@ -12,12 +12,29 @@ const STATIC_CACHE = [
   '/report.html',
   '/discussion.html',
   '/login.html',
+  '/register-school.html',
+  '/welcome.html',
+  '/getting-started.html',
+  '/chat-ia-coming-soon.html',
+  '/schools.html',
+  '/admin.html',
   '/styles-mobile.css',
   '/config.js',
   '/maintenance-config.js',
+  '/pwa-installer.js',
   '/manifest.json',
+  '/icons/icon-72x72.png',
+  '/icons/icon-96x96.png',
+  '/icons/icon-128x128.png',
+  '/icons/icon-144x144.png',
+  '/icons/icon-152x152.png',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-384x384.png',
+  '/icons/icon-512x512.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/apple-touch-icon-120x120.png',
+  '/icons/apple-touch-icon-152x152.png',
+  '/icons/apple-touch-icon-167x167.png'
 ];
 
 // Installation du Service Worker

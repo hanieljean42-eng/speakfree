@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1170" height="2532" viewBox="0 0 1170 2532" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#16213e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f3460;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="logo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e94560;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff6b6b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1170" height="2532" fill="url(#bg)"/>
+  
+  <!-- Logo Circle -->
+  <circle cx="585" cy="1266" r="210.6" fill="rgba(255,255,255,0.05)"/>
+  <circle cx="585" cy="1266" r="203.57999999999998" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="7.0200000000000005"/>
+  
+  <!-- Logo Text -->
+  <text x="585" y="1294.08" 
+        font-size="175.5" 
+        font-weight="bold" 
+        text-anchor="middle" 
+        dominant-baseline="middle" 
+        fill="url(#logo)" 
+        font-family="Arial, sans-serif">SF</text>
+  
+  <!-- App Name -->
+  <text x="585" y="1687.2" 
+        font-size="52.65" 
+        font-weight="bold" 
+        text-anchor="middle" 
+        fill="white" 
+        font-family="Arial, sans-serif">SpeakFree</text>
+  
+  <!-- Tagline -->
+  <text x="585" y="1792.5" 
+        font-size="35.1" 
+        text-anchor="middle" 
+        fill="rgba(255,255,255,0.6)" 
+        font-family="Arial, sans-serif">Parle librement. Protège ton école.</text>
+</svg>
