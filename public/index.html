@@ -861,6 +861,7 @@
         function installPWA() {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const isAndroid = /Android/.test(navigator.userAgent);
+            const isMobile = isIOS || isAndroid;
             
             if (pwaPrompt) {
                 // Installation automatique disponible
@@ -872,33 +873,55 @@
                     }
                     pwaPrompt = null;
                 });
-            } else {
-                // Afficher instructions manuelles
-                let msg = '📲 INSTALLER SPEAKFREE\\n\\n';
+            } else if (isMobile) {
+                // Instructions pour mobile
+                let msg = '📱 INSTALLER L\'APPLICATION SPEAKFREE\\n\\n';
+                msg += '⚠️ Pour installer une VRAIE APPLICATION sur ton téléphone :\\n\\n';
                 
                 if (isIOS) {
-                    msg += 'Sur iPhone/iPad:\\n\\n' +
-                           '1. Appuie sur Partager ⬆️ (en bas)\\n' +
-                           '2. Sélectionne "Sur l\'écran d\'accueil"\\n' +
-                           '3. Confirme "Ajouter"';
+                    msg += '📲 Sur iPhone/iPad (Safari) :\\n\\n' +
+                           '1. Appuie sur le bouton PARTAGER ⬆️\\n' +
+                           '   (en bas au milieu de l\'écran)\\n\\n' +
+                           '2. Fais défiler et sélectionne\\n' +
+                           '   "Sur l\'écran d\'accueil" 📱\\n\\n' +
+                           '3. Appuie sur "Ajouter" en haut à droite\\n\\n' +
+                           '✅ L\'icône SpeakFree apparaîtra sur ton écran d\'accueil !';
                 } else if (isAndroid) {
-                    msg += 'Sur Android:\\n\\n' +
-                           '1. Ouvre le menu ⋮ (en haut à droite)\\n' +
-                           '2. Sélectionne "Ajouter à l\'écran d\'accueil"\\n' +
-                           '3. Confirme l\'installation';
-                } else {
-                    msg += 'Sur ordinateur:\\n\\n' +
-                           'Cherche l\'icône ⊕ dans la barre d\'adresse\\n' +
-                           'ou utilise le menu du navigateur';
+                    msg += '📲 Sur Android (Chrome) :\\n\\n' +
+                           '1. Ouvre le menu ⋮ en haut à droite\\n\\n' +
+                           '2. Sélectionne "Installer l\'application"\\n' +
+                           '   ou "Ajouter à l\'écran d\'accueil"\\n\\n' +
+                           '3. Confirme l\'installation\\n\\n' +
+                           '✅ L\'application s\'installera comme une vraie app !';
                 }
                 
                 alert(msg);
+            } else {
+                // Message pour ordinateur - expliquer que c'est pour mobile
+                alert('📱 INSTALLATION MOBILE UNIQUEMENT\\n\\n' +
+                      '⚠️ Cette fonctionnalité est conçue pour les TÉLÉPHONES.\\n\\n' +
+                      'Pour installer SpeakFree comme une vraie application :\\n\\n' +
+                      '📲 Ouvre ce site sur ton TÉLÉPHONE\\n' +
+                      '   (Android ou iPhone)\\n\\n' +
+                      '🔗 Adresse : speakfree.pages.dev\\n\\n' +
+                      'Le bouton "📱 Installer l\'App" te permettra\\n' +
+                      'd\'installer SpeakFree sur ton écran d\'accueil.\\n\\n' +
+                      '💡 Sur PC, tu peux utiliser le site web\\n' +
+                      '   directement dans ton navigateur.');
             }
         }
 
-        // Masquer si déjà installé
+        // Masquer si déjà installé ou si c'est un ordinateur
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
         if (window.matchMedia('(display-mode: standalone)').matches) {
             document.getElementById('pwa-install-btn').style.display = 'none';
+        } else if (!isMobileDevice) {
+            // Sur PC, masquer le bouton après 3 secondes
+            setTimeout(() => {
+                const btn = document.getElementById('pwa-install-btn');
+                if (btn) btn.style.display = 'none';
+            }, 3000);
         }
 
         // Enregistrer Service Worker
