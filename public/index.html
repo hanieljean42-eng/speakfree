@@ -801,7 +801,96 @@
         }
     </script>
     
-    <!-- PWA Installer -->
+    <!-- Bouton d'installation PWA visible -->
+    <div id="pwa-install-btn" style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: block;
+    ">
+        <button onclick="installPWA()" style="
+            background: linear-gradient(135deg, #e94560, #d63447);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(233, 69, 96, 0.8)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(233, 69, 96, 0.6)'">
+            <span style="font-size: 1.2em;">📱</span>
+            <span>Installer l'App</span>
+        </button>
+    </div>
+
+    <script>
+        let pwaPrompt = null;
+
+        // Capturer l'événement d'installation
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            pwaPrompt = e;
+            console.log('✅ Prompt d\'installation capturé');
+        });
+
+        function installPWA() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            if (pwaPrompt) {
+                // Installation automatique disponible
+                pwaPrompt.prompt();
+                pwaPrompt.userChoice.then((result) => {
+                    console.log('Installation:', result.outcome);
+                    if (result.outcome === 'accepted') {
+                        document.getElementById('pwa-install-btn').style.display = 'none';
+                    }
+                    pwaPrompt = null;
+                });
+            } else {
+                // Afficher instructions manuelles
+                let msg = '📲 INSTALLER SPEAKFREE\\n\\n';
+                
+                if (isIOS) {
+                    msg += 'Sur iPhone/iPad:\\n\\n' +
+                           '1. Appuie sur Partager ⬆️ (en bas)\\n' +
+                           '2. Sélectionne "Sur l\'écran d\'accueil"\\n' +
+                           '3. Confirme "Ajouter"';
+                } else if (isAndroid) {
+                    msg += 'Sur Android:\\n\\n' +
+                           '1. Ouvre le menu ⋮ (en haut à droite)\\n' +
+                           '2. Sélectionne "Ajouter à l\'écran d\'accueil"\\n' +
+                           '3. Confirme l\'installation';
+                } else {
+                    msg += 'Sur ordinateur:\\n\\n' +
+                           'Cherche l\'icône ⊕ dans la barre d\'adresse\\n' +
+                           'ou utilise le menu du navigateur';
+                }
+                
+                alert(msg);
+            }
+        }
+
+        // Masquer si déjà installé
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            document.getElementById('pwa-install-btn').style.display = 'none';
+        }
+
+        // Enregistrer Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('✅ Service Worker enregistré:', reg.scope))
+                .catch(err => console.error('❌ Erreur Service Worker:', err));
+        }
+    </script>
+    
+    <!-- PWA Installer (backup) -->
     <script src="/pwa-installer.js" defer></script>
 </body>
 </html>
