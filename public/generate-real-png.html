@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Générateur PNG - SpeakFree</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #e94560; }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🎨 Générateur d'Icônes PNG - SpeakFree</h1>
+    <div class="status" id="status">Prêt à générer les icônes...</div>
+    <button onclick="generateAllIcons()">📥 Générer et Télécharger Toutes les Icônes PNG</button>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Fond dégradé
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(0.5, '#16213e');
+            gradient.addColorStop(1, '#e94560');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Cercle central avec glow
+            ctx.shadowBlur = size * 0.05;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Bordure cercle
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = size * 0.02;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.38, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Texte SF avec ombre
+            ctx.shadowBlur = size * 0.03;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.font = `bold ${size * 0.4}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.fillText('SF', size / 2, size / 2);
+
+            return canvas;
+        }
+
+        async function generateAllIcons() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '⏳ Génération en cours...';
+            
+            for (let i = 0; i < sizes.length; i++) {
+                const size = sizes[i];
+                const canvas = createIcon(size);
+                
+                // Télécharger l'icône
+                await new Promise((resolve) => {
+                    canvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `icon-${size}x${size}.png`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        
+                        statusDiv.innerHTML += `<br>✅ icon-${size}x${size}.png généré`;
+                        setTimeout(resolve, 300);
+                    }, 'image/png', 1.0);
+                });
+            }
+            
+            statusDiv.innerHTML += '<br><br>🎉 <strong>Toutes les icônes ont été générées!</strong><br><br>📁 Remplace les fichiers dans <code>public/icons/</code>';
+        }
+    </script>
+</body>
+</html>

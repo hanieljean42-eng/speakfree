@@ -855,8 +855,26 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             pwaPrompt = e;
-            console.log('✅ Prompt d\'installation capturé');
+            console.log('✅ PWA: Prompt d\'installation capturé - installation automatique disponible!');
+            
+            // Afficher une notification discrète
+            const notif = document.createElement('div');
+            notif.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#4CAF50;color:white;padding:10px 20px;border-radius:8px;z-index:10000;font-size:0.9em;';
+            notif.textContent = '✅ Installation automatique activée!';
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
         });
+        
+        // Log si l'événement n'est jamais déclenché
+        setTimeout(() => {
+            if (!pwaPrompt) {
+                console.warn('⚠️ PWA: beforeinstallprompt non déclenché. Raisons possibles:');
+                console.warn('  - Service Worker pas encore enregistré');
+                console.warn('  - Manifest.json invalide');
+                console.warn('  - Critères PWA non remplis');
+                console.warn('  - Application déjà installée');
+            }
+        }, 5000);
 
         function installPWA() {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -888,11 +906,18 @@
                            '✅ L\'icône SpeakFree apparaîtra sur ton écran d\'accueil !';
                 } else if (isAndroid) {
                     msg += '📲 Sur Android (Chrome) :\\n\\n' +
-                           '1. Ouvre le menu ⋮ en haut à droite\\n\\n' +
-                           '2. Sélectionne "Installer l\'application"\\n' +
-                           '   ou "Ajouter à l\'écran d\'accueil"\\n\\n' +
-                           '3. Confirme l\'installation\\n\\n' +
-                           '✅ L\'application s\'installera comme une vraie app !';
+                           '⚠️ SI TU NE VOIS PAS "INSTALLER" :\\n' +
+                           'Chrome doit d\'abord vérifier que le site\\n' +
+                           'est fiable. Attends 30 secondes et recharge.\\n\\n' +
+                           'MÉTHODE 1 (Automatique) :\\n' +
+                           '1. Menu Chrome ⋮ (en haut à droite)\\n' +
+                           '2. Cherche "Installer l\'application"\\n' +
+                           '3. Appuie dessus\\n\\n' +
+                           'MÉTHODE 2 (Manuel) :\\n' +
+                           '1. Menu Chrome ⋮\\n' +
+                           '2. "Ajouter à l\'écran d\'accueil"\\n' +
+                           '3. Confirme\\n\\n' +
+                           '✅ L\'icône apparaîtra sur ton écran !';
                 }
                 
                 alert(msg);
