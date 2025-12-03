@@ -29,7 +29,7 @@ class PWAInstaller {
     
     // Afficher le bouton immédiatement si pas en mode standalone
     if (!PWAInstaller.isStandalone()) {
-      setTimeout(() => this.showInstallButton(), 2000);
+      setTimeout(() => this.showInstallButton(), 500);
     }
   }
 

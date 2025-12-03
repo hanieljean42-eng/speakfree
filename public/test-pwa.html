@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PWA - SpeakFree</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border-left: 4px solid #F44336;
+        }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #d63447;
+        }
+        #install-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+            border-radius: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Installation PWA SpeakFree</h1>
+    
+    <div class="test-section">
+        <h2>📋 Diagnostics</h2>
+        <div id="diagnostics"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Actions</h2>
+        <button onclick="testServiceWorker()">Tester Service Worker</button>
+        <button onclick="testManifest()">Tester Manifest</button>
+        <button onclick="showInstallPrompt()">Afficher Instructions</button>
+        <button onclick="window.location.href='/'">Retour Accueil</button>
+    </div>
+
+    <button id="install-btn" style="display: none;">
+        📱 Installer l'Application
+    </button>
+
+    <script>
+        let deferredPrompt = null;
+
+        // Diagnostics au chargement
+        window.addEventListener('load', async () => {
+            const diagnostics = document.getElementById('diagnostics');
+            let html = '';
+
+            // Test 1: Service Worker
+            if ('serviceWorker' in navigator) {
+                try {
+                    const reg = await navigator.serviceWorker.register('/service-worker.js');
+                    html += '<div class="status success">✅ Service Worker enregistré: ' + reg.scope + '</div>';
+                } catch (e) {
+                    html += '<div class="status error">❌ Erreur Service Worker: ' + e.message + '</div>';
+                }
+            } else {
+                html += '<div class="status error">❌ Service Worker non supporté</div>';
+            }
+
+            // Test 2: Manifest
+            try {
+                const response = await fetch('/manifest.json');
+                const manifest = await response.json();
+                html += '<div class="status success">✅ Manifest chargé: ' + manifest.name + '</div>';
+            } catch (e) {
+                html += '<div class="status error">❌ Erreur Manifest: ' + e.message + '</div>';
+            }
+
+            // Test 3: HTTPS
+            if (location.protocol === 'https:' || location.hostname === 'localhost') {
+                html += '<div class="status success">✅ Site en HTTPS</div>';
+            } else {
+                html += '<div class="status error">❌ HTTPS requis pour PWA</div>';
+            }
+
+            // Test 4: Navigateur
+            const isChrome = /Chrome/.test(navigator.userAgent);
+            const isEdge = /Edg/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            html += '<div class="status">ℹ️ Navigateur: ' + navigator.userAgent.split(' ').pop() + '</div>';
+
+            // Test 5: Installation possible
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                html += '<div class="status success">✅ Application déjà installée!</div>';
+            } else {
+                html += '<div class="status">ℹ️ Application pas encore installée</div>';
+            }
+
+            diagnostics.innerHTML = html;
+        });
+
+        // Capturer l'événement d'installation
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('install-btn');
+            btn.style.display = 'block';
+            
+            btn.onclick = async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('Installation:', outcome);
+                    if (outcome === 'accepted') {
+                        btn.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                }
+            };
+        });
+
+        function testServiceWorker() {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    alert('✅ Service Worker actif!\nScope: ' + reg.scope);
+                } else {
+                    alert('❌ Service Worker non trouvé');
+                }
+            });
+        }
+
+        function testManifest() {
+            fetch('/manifest.json')
+                .then(r => r.json())
+                .then(m => alert('✅ Manifest OK!\n\nNom: ' + m.name + '\nCouleur: ' + m.theme_color))
+                .catch(e => alert('❌ Erreur: ' + e.message));
+        }
+
+        function showInstallPrompt() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            let msg = '📲 INSTALLER SPEAKFREE\n\n';
+            
+            if (isIOS) {
+                msg += 'Sur iPhone/iPad:\n\n' +
+                       '1. Appuie sur le bouton Partager ⬆️\n' +
+                       '2. Sélectionne "Sur l\'écran d\'accueil"\n' +
+                       '3. Confirme "Ajouter"';
+            } else if (isAndroid) {
+                msg += 'Sur Android:\n\n' +
+                       '1. Ouvre le menu ⋮ (en haut à droite)\n' +
+                       '2. Sélectionne "Ajouter à l\'écran d\'accueil"\n' +
+                       '3. Confirme l\'installation';
+            } else {
+                msg += 'Sur ordinateur:\n\n' +
+                       'Cherche l\'icône ⊕ dans la barre d\'adresse\n' +
+                       'ou dans le menu du navigateur';
+            }
+            
+            alert(msg);
+        }
+
+        // Afficher le bouton après 2 secondes même sans événement
+        setTimeout(() => {
+            if (!window.matchMedia('(display-mode: standalone)').matches && !deferredPrompt) {
+                const btn = document.getElementById('install-btn');
+                btn.style.display = 'block';
+                btn.onclick = showInstallPrompt;
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
