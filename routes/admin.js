@@ -25,26 +25,20 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
     const db = req.db;
     const schoolId = req.user.schoolId;
     
-    console.log('[ADMIN] Dashboard pour school_id:', schoolId);
-    
     try {
-        const [[{ total }]] = await db.execute(
-            'SELECT COUNT(*) as total FROM reports WHERE school_id = ?',
-            [schoolId]
-        );
+        // Vérifier le cache (3 secondes)
+        const cacheKey = 'admin:dashboard:' + schoolId;
+        const cached = req.cache && req.cache.get(cacheKey);
+        if (cached) return res.json(cached);
         
-        const [[{ pending }]] = await db.execute(
-            'SELECT COUNT(*) as pending FROM reports WHERE school_id = ? AND status = "pending"',
-            [schoolId]
-        );
-        
-        const [[{ inProgress }]] = await db.execute(
-            'SELECT COUNT(*) as inProgress FROM reports WHERE school_id = ? AND status = "in-progress"',
-            [schoolId]
-        );
-        
-        const [[{ resolved }]] = await db.execute(
-            'SELECT COUNT(*) as resolved FROM reports WHERE school_id = ? AND status = "resolved"',
+        // Une seule requête pour tous les compteurs
+        const [[counts]] = await db.execute(
+            `SELECT 
+                COUNT(*) as total,
+                SUM(status = "pending") as pending,
+                SUM(status = "in-progress") as inProgress,
+                SUM(status = "resolved") as resolved
+             FROM reports WHERE school_id = ?`,
             [schoolId]
         );
         
@@ -54,16 +48,19 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
             [schoolId]
         );
         
-        console.log('[ADMIN] Stats:', { total, pending, inProgress, resolved });
-        
-        res.json({
+        const result = {
             success: true,
-            total,
-            pending,
-            inProgress,
-            resolved,
+            total: counts.total || 0,
+            pending: counts.pending || 0,
+            inProgress: counts.inProgress || 0,
+            resolved: counts.resolved || 0,
             recentReports
-        });
+        };
+        
+        // Mettre en cache 3 secondes
+        if (req.cache) req.cache.set(cacheKey, result, 3000);
+        
+        res.json(result);
         
     } catch (error) {
         console.error('Erreur dashboard:', error);
@@ -201,6 +198,12 @@ router.patch('/reports/:id/status', authMiddleware, async (req, res) => {
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Signalement non trouvé' });
+        }
+        
+        // Invalider le cache dashboard pour refléter le changement immédiatement
+        if (req.cache) {
+            req.cache.invalidate('admin:dashboard:' + schoolId);
+            req.cache.invalidate('stats:');
         }
         
         res.json({ success: true, message: 'Statut mis à jour' });
@@ -354,6 +357,12 @@ router.delete('/reports/:id', authMiddleware, async (req, res) => {
         
         // Supprimer le signalement (les tables liées sont supprimées via ON DELETE CASCADE)
         await db.execute('DELETE FROM reports WHERE id = ? AND school_id = ?', [id, schoolId]);
+        
+        // Invalider le cache
+        if (req.cache) {
+            req.cache.invalidate('admin:dashboard:' + schoolId);
+            req.cache.invalidate('stats:');
+        }
         
         res.json({ success: true, message: 'Signalement supprimé' });
         

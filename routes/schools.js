@@ -15,19 +15,30 @@ router.get('/stats/global', async (req, res) => {
     const db = req.db;
     
     try {
-        const [[{ totalSchools }]] = await db.execute('SELECT COUNT(*) as totalSchools FROM schools WHERE status = "active"');
-        const [[{ totalReports }]] = await db.execute('SELECT COUNT(*) as totalReports FROM reports');
-        const [[{ totalAdmins }]] = await db.execute('SELECT COUNT(*) as totalAdmins FROM users WHERE role = "admin"');
+        // Vérifier le cache (5 secondes)
+        const cached = req.cache && req.cache.get('stats:global');
+        if (cached) return res.json(cached);
         
-        // Format attendu par index.html: schools, reports, admins
-        res.json({
+        // Une seule requête au lieu de 3
+        const [[stats]] = await db.execute(`
+            SELECT 
+                (SELECT COUNT(*) FROM schools WHERE status = "active") as totalSchools,
+                (SELECT COUNT(*) FROM reports) as totalReports,
+                (SELECT COUNT(*) FROM users WHERE role = "admin") as totalAdmins
+        `);
+        
+        const result = {
             success: true,
-            schools: totalSchools,
-            reports: totalReports,
-            admins: totalAdmins,
-            // Compatibilité avec l'ancien format
-            stats: { totalSchools, totalReports, totalAdmins }
-        });
+            schools: stats.totalSchools,
+            reports: stats.totalReports,
+            admins: stats.totalAdmins,
+            stats: { totalSchools: stats.totalSchools, totalReports: stats.totalReports, totalAdmins: stats.totalAdmins }
+        };
+        
+        // Mettre en cache 5 secondes
+        if (req.cache) req.cache.set('stats:global', result, 5000);
+        
+        res.json(result);
         
     } catch (error) {
         console.error('Erreur stats:', error);

@@ -15,6 +15,31 @@ const PORT = process.env.PORT || 3000;
 // Pool de connexions MySQL
 let pool;
 
+// Cache en mémoire pour les requêtes fréquentes
+const cache = {
+    data: new Map(),
+    set(key, value, ttlMs = 5000) {
+        this.data.set(key, { value, expires: Date.now() + ttlMs });
+    },
+    get(key) {
+        const entry = this.data.get(key);
+        if (!entry) return null;
+        if (Date.now() > entry.expires) {
+            this.data.delete(key);
+            return null;
+        }
+        return entry.value;
+    },
+    invalidate(prefix) {
+        for (const key of this.data.keys()) {
+            if (key.startsWith(prefix)) this.data.delete(key);
+        }
+    },
+    clear() {
+        this.data.clear();
+    }
+};
+
 // Initialiser la connexion MySQL
 async function initDatabase() {
     try {
@@ -26,8 +51,13 @@ async function initDatabase() {
             database: process.env.MYSQL_DATABASE || 'speakfree',
             port: parseInt(process.env.MYSQL_PORT) || 3306,
             waitForConnections: true,
-            connectionLimit: 10,
+            connectionLimit: 20,
             queueLimit: 0,
+            connectTimeout: 10000,
+            enableKeepAlive: true,
+            keepAliveInitialDelay: 10000,
+            maxIdle: 10,
+            idleTimeout: 60000,
             // Forcer le charset pour éviter les problèmes de collation
             charset: 'utf8mb4'
         };
@@ -310,7 +340,7 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Super-Admin-Code']
 };
 app.use(cors(corsOptions));
 
@@ -342,6 +372,7 @@ app.use((req, res, next) => {
 // Le pool est stocké dans app.locals.db après initDatabase()
 app.use((req, res, next) => {
     req.db = app.locals.db || pool;
+    req.cache = cache;
     if (!req.db) {
         console.warn('[MIDDLEWARE] DB non disponible pour', req.path);
     }

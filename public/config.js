@@ -92,11 +92,11 @@ const CONFIG = {
     },
 
     // Timeouts (ms)
-    TIMEOUT: 30000,
+    TIMEOUT: 15000,
     
     // Retry config
-    MAX_RETRIES: 3,
-    RETRY_DELAY: 1000
+    MAX_RETRIES: 2,
+    RETRY_DELAY: 500
 };
 
 /**
@@ -154,7 +154,7 @@ async function apiCall(endpoint, options = {}) {
             console.error(`[API] Tentative ${attempt} échouée:`, error.message);
             
             if (attempt < CONFIG.MAX_RETRIES) {
-                await new Promise(r => setTimeout(r, 500 * attempt));
+                await new Promise(r => setTimeout(r, 300 * attempt));
             }
         }
     }
@@ -170,7 +170,7 @@ async function checkBackendHealth() {
     try {
         console.log('[HEALTH] Vérification de', CONFIG.API_URL);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         
         const response = await fetch(CONFIG.API_URL + '/api/schools/stats/global', {
             signal: controller.signal

@@ -73,35 +73,34 @@ router.get('/stats', async (req, res) => {
     }
     
     try {
-        const [[{ totalSchools }]] = await db.execute('SELECT COUNT(*) as totalSchools FROM schools');
-        const [[{ activeSchools }]] = await db.execute('SELECT COUNT(*) as activeSchools FROM schools WHERE status = "active"');
-        const [[{ pendingSchools }]] = await db.execute('SELECT COUNT(*) as pendingSchools FROM schools WHERE status = "pending"');
-        const [[{ totalReports }]] = await db.execute('SELECT COUNT(*) as totalReports FROM reports');
-        const [[{ pendingReports }]] = await db.execute('SELECT COUNT(*) as pendingReports FROM reports WHERE status = "pending"');
+        // Vérifier le cache (5 secondes)
+        const cached = req.cache && req.cache.get('stats:superadmin');
+        if (cached) return res.json(cached);
         
-        // Compter les admins - utiliser users au lieu de admins si la table n'existe pas
-        let totalAdmins = 0;
-        try {
-            const [[result]] = await db.execute('SELECT COUNT(*) as totalAdmins FROM admins');
-            totalAdmins = result.totalAdmins;
-        } catch (e) {
-            // Table admins n'existe peut-être pas, essayer users
-            try {
-                const [[result]] = await db.execute('SELECT COUNT(*) as totalAdmins FROM users WHERE role = "admin"');
-                totalAdmins = result.totalAdmins;
-            } catch (e2) {
-                totalAdmins = 0;
-            }
-        }
+        // Une seule requête au lieu de 6
+        const [[stats]] = await db.execute(`
+            SELECT 
+                (SELECT COUNT(*) FROM schools) as totalSchools,
+                (SELECT COUNT(*) FROM schools WHERE status = "active") as activeSchools,
+                (SELECT COUNT(*) FROM schools WHERE status = "pending") as pendingSchools,
+                (SELECT COUNT(*) FROM reports) as totalReports,
+                (SELECT COUNT(*) FROM reports WHERE status = "pending") as pendingReports,
+                (SELECT COUNT(*) FROM admins) as totalAdmins
+        `);
         
-        res.json({
-            totalSchools,
-            activeSchools,
-            pendingSchools,
-            totalReports,
-            pendingReports,
-            totalAdmins
-        });
+        const result = {
+            totalSchools: stats.totalSchools,
+            activeSchools: stats.activeSchools,
+            pendingSchools: stats.pendingSchools,
+            totalReports: stats.totalReports,
+            pendingReports: stats.pendingReports,
+            totalAdmins: stats.totalAdmins
+        };
+        
+        // Mettre en cache 5 secondes
+        if (req.cache) req.cache.set('stats:superadmin', result, 5000);
+        
+        res.json(result);
         
     } catch (error) {
         console.error('[SUPER-ADMIN] Erreur stats:', error.message);

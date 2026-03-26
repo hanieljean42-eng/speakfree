@@ -96,6 +96,12 @@ router.post('/create', upload.array('files', 10), async (req, res) => {
             [result.insertId, discussionCode, school.id]
         );
         
+        // Invalider le cache pour que les stats se mettent à jour immédiatement
+        if (req.cache) {
+            req.cache.invalidate('admin:dashboard:' + school.id);
+            req.cache.invalidate('stats:');
+        }
+        
         res.status(201).json({
             success: true,
             message: 'Signalement créé avec succès',

@@ -497,6 +497,12 @@ router.post('/message', async (req, res) => {
                     [dbSession.id]
                 );
                 
+                // Invalider le cache pour que les stats se mettent à jour immédiatement
+                if (req.cache) {
+                    req.cache.invalidate('admin:dashboard:' + session.schoolId);
+                    req.cache.invalidate('stats:');
+                }
+                
                 session.step = 5;
                 response = MESSAGES.reportCreated(trackingCode, discussionCode, session.schoolName);
                 
