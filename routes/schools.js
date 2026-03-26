@@ -78,6 +78,24 @@ router.post('/register', async (req, res) => {
             [schoolResult.insertId, email, firstName, lastName, position || 'Administrateur', phone || '']
         );
         
+        // Créer aussi un utilisateur dans la table users pour la connexion future
+        // Le mot de passe sera défini lors de l'approbation par le super admin
+        const placeholderPassword = await bcrypt.hash('PENDING_APPROVAL_' + Date.now(), 10);
+        await db.execute(
+            `INSERT INTO users (username, first_name, last_name, email, password, role, school_id, position, phone, is_super_admin)
+             VALUES (?, ?, ?, ?, ?, 'admin', ?, ?, ?, 0)`,
+            [
+                `${firstName} ${lastName}`,
+                firstName,
+                lastName,
+                email,
+                placeholderPassword,
+                schoolResult.insertId,
+                position || 'Administrateur',
+                phone || ''
+            ]
+        );
+        
         res.status(201).json({
             success: true,
             message: 'Demande d\'inscription envoyée avec succès ! Vous serez contacté sous 48h.',

@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'speakfree_secret_key_2024';
-const SUPER_ADMIN_CODE = '200700';
+const SUPER_ADMIN_CODE = process.env.SUPER_ADMIN_CODE || '200700';
 
 // Middleware de vérification du token
 const verifyToken = (req, res, next) => {
@@ -29,7 +29,7 @@ const verifySuperAdmin = async (req, res, next) => {
     try {
         const [users] = await db.execute(
             'SELECT is_super_admin FROM users WHERE id = ?',
-            [req.user.id]
+            [req.user.userId]
         );
         
         if (users.length === 0 || !users[0].is_super_admin) {
@@ -41,6 +41,15 @@ const verifySuperAdmin = async (req, res, next) => {
         console.error('Erreur verify super admin:', error);
         res.status(500).json({ error: 'Erreur serveur' });
     }
+};
+
+// Middleware pour vérifier le code super admin (pour les routes sans JWT)
+const verifyCode = (req, res, next) => {
+    const code = req.body.code || req.query.code || req.headers['x-super-admin-code'];
+    if (code !== SUPER_ADMIN_CODE) {
+        return res.status(403).json({ error: 'Code super admin invalide' });
+    }
+    next();
 };
 
 // POST /api/super-admin/verify-code
@@ -101,7 +110,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // GET /api/super-admin/schools/pending
-router.get('/schools/pending', async (req, res) => {
+router.get('/schools/pending', verifyCode, async (req, res) => {
     const db = req.db;
     
     try {
@@ -124,7 +133,7 @@ router.get('/schools/pending', async (req, res) => {
 });
 
 // GET /api/super-admin/schools/active
-router.get('/schools/active', async (req, res) => {
+router.get('/schools/active', verifyCode, async (req, res) => {
     const db = req.db;
     
     try {
@@ -148,7 +157,7 @@ router.get('/schools/active', async (req, res) => {
 });
 
 // GET /api/super-admin/schools/inactive
-router.get('/schools/inactive', async (req, res) => {
+router.get('/schools/inactive', verifyCode, async (req, res) => {
     const db = req.db;
     
     try {
@@ -172,7 +181,7 @@ router.get('/schools/inactive', async (req, res) => {
 });
 
 // POST /api/super-admin/schools/:schoolId/approve
-router.post('/schools/:schoolId/approve', async (req, res) => {
+router.post('/schools/:schoolId/approve', verifyCode, async (req, res) => {
     const db = req.db;
     const { schoolId } = req.params;
     const { defaultPassword } = req.body;
@@ -199,7 +208,7 @@ router.post('/schools/:schoolId/approve', async (req, res) => {
             [schoolId]
         );
         
-        // Si un mot de passe est fourni, mettre à jour l'admin
+        // Si un mot de passe est fourni, mettre à jour l'admin et l'utilisateur
         if (defaultPassword && school.email) {
             const hashedPassword = await bcrypt.hash(defaultPassword, 10);
             await db.execute(
@@ -207,13 +216,18 @@ router.post('/schools/:schoolId/approve', async (req, res) => {
                 [hashedPassword, schoolId]
             );
             
-            // Créer aussi un utilisateur dans la table users pour la connexion
+            // Mettre à jour ou créer l'utilisateur dans la table users pour la connexion
             const [existingUser] = await db.execute('SELECT id FROM users WHERE email = ?', [school.email]);
-            if (existingUser.length === 0) {
+            if (existingUser.length > 0) {
                 await db.execute(
-                    `INSERT INTO users (username, email, password, role, school_id, is_super_admin)
-                     VALUES (?, ?, ?, 'admin', ?, 0)`,
-                    [school.first_name + ' ' + school.last_name, school.email, hashedPassword, schoolId]
+                    'UPDATE users SET password = ? WHERE email = ?',
+                    [hashedPassword, school.email]
+                );
+            } else {
+                await db.execute(
+                    `INSERT INTO users (username, first_name, last_name, email, password, role, school_id, is_super_admin)
+                     VALUES (?, ?, ?, ?, ?, 'admin', ?, 0)`,
+                    [school.first_name + ' ' + school.last_name, school.first_name || '', school.last_name || '', school.email, hashedPassword, schoolId]
                 );
             }
         }
@@ -231,7 +245,7 @@ router.post('/schools/:schoolId/approve', async (req, res) => {
 });
 
 // POST /api/super-admin/schools/:schoolId/reject
-router.post('/schools/:schoolId/reject', async (req, res) => {
+router.post('/schools/:schoolId/reject', verifyCode, async (req, res) => {
     const db = req.db;
     const { schoolId } = req.params;
     
@@ -254,15 +268,9 @@ router.post('/schools/:schoolId/reject', async (req, res) => {
 });
 
 // POST /api/super-admin/schools/:schoolId/activate - Activer une école
-router.post('/schools/:schoolId/activate', async (req, res) => {
+router.post('/schools/:schoolId/activate', verifyCode, async (req, res) => {
     const db = req.db;
     const { schoolId } = req.params;
-    const { code } = req.body;
-    
-    // Vérifier le code super admin
-    if (code !== SUPER_ADMIN_CODE) {
-        return res.status(403).json({ error: 'Code super admin invalide' });
-    }
     
     try {
         const [schools] = await db.execute('SELECT name, status FROM schools WHERE id = ?', [schoolId]);
@@ -291,15 +299,9 @@ router.post('/schools/:schoolId/activate', async (req, res) => {
 });
 
 // POST /api/super-admin/schools/:schoolId/deactivate - Désactiver une école
-router.post('/schools/:schoolId/deactivate', async (req, res) => {
+router.post('/schools/:schoolId/deactivate', verifyCode, async (req, res) => {
     const db = req.db;
     const { schoolId } = req.params;
-    const { code } = req.body;
-    
-    // Vérifier le code super admin
-    if (code !== SUPER_ADMIN_CODE) {
-        return res.status(403).json({ error: 'Code super admin invalide' });
-    }
     
     try {
         const [schools] = await db.execute('SELECT name, status FROM schools WHERE id = ?', [schoolId]);
@@ -446,7 +448,7 @@ router.patch('/schools/:schoolId/status', verifyToken, verifySuperAdmin, async (
 });
 
 // GET /api/super-admin/schools/:schoolId/details - Détails d'une école
-router.get('/schools/:schoolId/details', async (req, res) => {
+router.get('/schools/:schoolId/details', verifyCode, async (req, res) => {
     const db = req.db;
     const { schoolId } = req.params;
     
@@ -491,16 +493,10 @@ router.get('/schools/:schoolId/details', async (req, res) => {
     }
 });
 
-// DELETE /api/super-admin/schools/:schoolId - Supprimer une école (sans auth JWT, vérifie le code)
-router.delete('/schools/:schoolId', async (req, res) => {
+// DELETE /api/super-admin/schools/:schoolId - Supprimer une école
+router.delete('/schools/:schoolId', verifyCode, async (req, res) => {
     const db = req.db;
     const { schoolId } = req.params;
-    const { code } = req.body;
-    
-    // Vérifier le code super admin
-    if (code !== SUPER_ADMIN_CODE) {
-        return res.status(403).json({ error: 'Code super admin invalide' });
-    }
     
     try {
         // Vérifier que l'école existe

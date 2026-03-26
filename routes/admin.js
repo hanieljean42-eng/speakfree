@@ -115,14 +115,15 @@ router.post('/fix-reports-school', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/admin/reports - Liste des signalements (SIMPLIFIÉ)
+// GET /api/admin/reports - Liste des signalements de l'école
 router.get('/reports', authMiddleware, async (req, res) => {
     const db = req.db;
+    const schoolId = req.user.schoolId;
     
     try {
-        // Simple: récupérer TOUS les signalements
         const [reports] = await db.execute(
-            'SELECT * FROM reports ORDER BY created_at DESC LIMIT 100'
+            'SELECT * FROM reports WHERE school_id = ? ORDER BY created_at DESC LIMIT 100',
+            [schoolId]
         );
         
         res.json({ success: true, reports });
@@ -210,9 +211,10 @@ router.patch('/reports/:id/status', authMiddleware, async (req, res) => {
     }
 });
 
-// GET /api/admin/discussions - Liste des discussions (SIMPLIFIÉ)
+// GET /api/admin/discussions - Liste des discussions de l'école
 router.get('/discussions', authMiddleware, async (req, res) => {
     const db = req.db;
+    const schoolId = req.user.schoolId;
     
     try {
         const [discussions] = await db.execute(
@@ -220,7 +222,9 @@ router.get('/discussions', authMiddleware, async (req, res) => {
                     (SELECT COUNT(*) FROM discussion_messages WHERE discussion_id = d.id) as message_count
              FROM discussions d 
              JOIN reports r ON d.report_id = r.id 
-             ORDER BY d.created_at DESC LIMIT 50`
+             WHERE d.school_id = ?
+             ORDER BY d.created_at DESC LIMIT 50`,
+            [schoolId]
         );
         
         res.json({ success: true, discussions });
@@ -348,18 +352,8 @@ router.delete('/reports/:id', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Signalement non trouvé' });
         }
         
-        // Supprimer les fichiers associés
-        await db.execute('DELETE FROM report_files WHERE report_id = ?', [id]);
-        
-        // Supprimer les discussions associées
-        const [discussions] = await db.execute('SELECT id FROM discussions WHERE report_id = ?', [id]);
-        for (const disc of discussions) {
-            await db.execute('DELETE FROM discussion_messages WHERE discussion_id = ?', [disc.id]);
-        }
-        await db.execute('DELETE FROM discussions WHERE report_id = ?', [id]);
-        
-        // Supprimer le signalement
-        await db.execute('DELETE FROM reports WHERE id = ?', [id]);
+        // Supprimer le signalement (les tables liées sont supprimées via ON DELETE CASCADE)
+        await db.execute('DELETE FROM reports WHERE id = ? AND school_id = ?', [id, schoolId]);
         
         res.json({ success: true, message: 'Signalement supprimé' });
         

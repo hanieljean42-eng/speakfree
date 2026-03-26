@@ -171,7 +171,7 @@
     var API = (typeof CONFIG !== 'undefined') ? CONFIG.API_URL : 'https://speakfree-m9xv.onrender.com';
     console.log('[SUPER-ADMIN] API URL:', API);
     
-    var CODE = '200700';
+    var CODE = '';
     var currentTab = 'pending';
     
     // ===== ELEMENTS =====
@@ -187,14 +187,36 @@
     
     // ===== LOGIN =====
     loginBtn.onclick = function() {
-        if (codeInput.value === CODE) {
-            loginScreen.style.display = 'none';
-            dashboard.style.display = 'block';
-            loadStats();
-            loadSchools('pending');
-        } else {
-            alert('Code incorrect');
-        }
+        var enteredCode = codeInput.value.trim();
+        if (!enteredCode) { alert('Veuillez entrer un code'); return; }
+        
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Vérification...';
+        
+        fetch(API + '/api/super-admin/verify-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: enteredCode })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Connexion';
+            if (d.valid) {
+                CODE = enteredCode;
+                loginScreen.style.display = 'none';
+                dashboard.style.display = 'block';
+                loadStats();
+                loadSchools('pending');
+            } else {
+                alert('Code incorrect');
+            }
+        })
+        .catch(function(e) {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Connexion';
+            alert('Erreur de connexion: ' + e.message);
+        });
     };
     
     codeInput.onkeypress = function(e) {
@@ -202,6 +224,7 @@
     };
     
     logoutBtn.onclick = function() {
+        CODE = '';
         dashboard.style.display = 'none';
         loginScreen.style.display = 'flex';
         codeInput.value = '';
@@ -236,7 +259,7 @@
     function loadSchools(type) {
         schoolList.innerHTML = '<div class="loading">Chargement...</div>';
         
-        var url = API + '/api/super-admin/schools/' + type;
+        var url = API + '/api/super-admin/schools/' + type + '?code=' + encodeURIComponent(CODE);
         
         fetch(url)
             .then(function(r) { return r.json(); })
@@ -340,7 +363,7 @@
         document.getElementById('approveModal').classList.add('active');
         
         // Récupérer les infos de l'école
-        fetch(API + '/api/super-admin/schools/' + id + '/details')
+        fetch(API + '/api/super-admin/schools/' + id + '/details?code=' + encodeURIComponent(CODE))
         .then(function(r) { return r.json(); })
         .then(function(d) {
             console.log('[MODAL] Données école:', d);
@@ -539,7 +562,7 @@
     }
     
     function viewDetails(id) {
-        fetch(API + '/api/super-admin/schools/' + id + '/details')
+        fetch(API + '/api/super-admin/schools/' + id + '/details?code=' + encodeURIComponent(CODE))
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.error) { alert('Erreur: ' + d.error); return; }
